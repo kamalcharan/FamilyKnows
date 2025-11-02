@@ -17,6 +17,8 @@ import { AssistantCard } from '../components/AssistantCard';
 import { CollaboratorsCard } from '../components/CollaboratorsCard';
 import { ChatModeContent } from '../../chat';
 import { CollaboratorsScreen } from '../../collaborators';
+import { QuickActionCard } from '../../../components/shared/QuickActionCard';
+import { defaultQuickActions } from '../../../dummydata/quickActions';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -29,6 +31,7 @@ export const MainDashboard: React.FC = () => {
   const [mode, setMode] = useState<'keyboard' | 'chat'>('keyboard');
   const [recentScreens, setRecentScreens] = useState<string[]>([]);
   const [activeScreen, setActiveScreen] = useState<string | null>(null);
+  const [showQuickActions, setShowQuickActions] = useState(false);
 
   // Load saved mode and recent screens on mount
   useEffect(() => {
@@ -161,9 +164,8 @@ export const MainDashboard: React.FC = () => {
     return recent;
   };
 
-  const renderDashboardCard = (card: any) => (
+  const renderDashboardCard = (card: any, index: number) => (
     <TouchableOpacity
-      key={card.id}
       style={[
         styles.card,
         { backgroundColor: theme.colors.utility.secondaryBackground }
@@ -200,27 +202,34 @@ export const MainDashboard: React.FC = () => {
 
   return (
     <MainLayout activeTab={mode === 'chat' ? 'chat' : 'home'} headerTitle="FamilyKnows">
-      <ScrollView 
-        style={[styles.container, { backgroundColor: theme.colors.utility.primaryBackground }]}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + insets.bottom }]} 
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Welcome Section */}
-        <View style={styles.welcomeSection}>
-          <Text style={[styles.greeting, { color: theme.colors.utility.secondaryText }]}>
-            Welcome back,
-          </Text>
-          <Text style={[styles.userName, { color: theme.colors.utility.primaryText }]}>
-            User
-          </Text>
-        </View>
+      {mode === 'chat' ? (
+        <ChatModeContent userName="User" />
+      ) : (
+        <ScrollView
+          style={[styles.container, { backgroundColor: theme.colors.utility.primaryBackground }]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + insets.bottom }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Welcome Section */}
+          <View style={styles.welcomeSection}>
+            <Text style={[styles.greeting, { color: theme.colors.utility.secondaryText }]}>
+              Welcome back,
+            </Text>
+            <Text style={[styles.userName, { color: theme.colors.utility.primaryText }]}>
+              User
+            </Text>
+          </View>
 
-        {/* Assistant Mode Switcher Card */}
-        <AssistantCard mode={mode} onSwitchMode={handleSwitchMode} />
+          {/* Assistant Mode Switcher Card */}
+          <AssistantCard mode={mode} onSwitchMode={handleSwitchMode} />
 
         {/* Dashboard Cards - Recent 4 cards based on usage */}
         <View style={styles.cardsGrid}>
-          {getDisplayCards().map(renderDashboardCard)}
+          {getDisplayCards().map((card, index) => (
+            <React.Fragment key={card.id}>
+              {renderDashboardCard(card, index)}
+            </React.Fragment>
+          ))}
         </View>
 
         {/* Collaborators Card - Separate from dashboard cards */}
@@ -235,13 +244,14 @@ export const MainDashboard: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.quickActionButton,
-                { 
+                {
                   backgroundColor: theme.colors.utility.secondaryBackground,
                   borderWidth: 1,
                   borderColor: theme.colors.brand.primary + '20',
                 }
               ]}
               activeOpacity={0.7}
+              onPress={() => setShowQuickActions(true)}
             >
               <MaterialCommunityIcons
                 name="plus-circle"
@@ -301,7 +311,15 @@ export const MainDashboard: React.FC = () => {
             </Text>
           </View>
         </View>
-      </ScrollView>
+        </ScrollView>
+      )}
+
+      {/* Quick Action Card Modal */}
+      <QuickActionCard
+        visible={showQuickActions}
+        onClose={() => setShowQuickActions(false)}
+        actions={defaultQuickActions}
+      />
     </MainLayout>
   );
 };
