@@ -7,12 +7,18 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  Alert,
+  ActionSheetIOS,
+  Platform,
 } from 'react-native';
 import { useTheme } from '../../../theme/ThemeContext';
 import { useWorkspace } from '../../../contexts/WorkspaceContext';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ServiceProvider, ServiceProviderCategory } from '../../../types/collaborators';
 import { dummyServiceProviders, categoryData } from '../../../dummydata';
 import { ServiceProviderCard } from '../components/ServiceProviderCard';
+import { AddFromContactsModal } from '../components/AddFromContactsModal';
+import { AddProviderForm } from '../components/AddProviderForm';
 
 type TabType = 'family' | 'providers';
 
@@ -21,11 +27,78 @@ export const CollaboratorsScreen: React.FC = () => {
   const { activeWorkspace } = useWorkspace();
   const [activeTab, setActiveTab] = useState<TabType>('providers');
   const [selectedCategory, setSelectedCategory] = useState<ServiceProviderCategory | 'all'>('all');
+  const [serviceProviders, setServiceProviders] = useState<ServiceProvider[]>(dummyServiceProviders);
+  const [showContactsModal, setShowContactsModal] = useState(false);
+  const [showProviderForm, setShowProviderForm] = useState(false);
+  const [formInitialData, setFormInitialData] = useState<Partial<ServiceProvider> | undefined>();
 
   const filteredProviders =
     selectedCategory === 'all'
-      ? dummyServiceProviders
-      : dummyServiceProviders.filter((p) => p.category === selectedCategory);
+      ? serviceProviders
+      : serviceProviders.filter((p) => p.category === selectedCategory);
+
+  const handleAddProvider = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Select from Contacts', 'Enter Manually'],
+          cancelButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            setShowContactsModal(true);
+          } else if (buttonIndex === 2) {
+            setFormInitialData(undefined);
+            setShowProviderForm(true);
+          }
+        }
+      );
+    } else {
+      // For Android, show custom modal
+      Alert.alert(
+        'Add Service Provider',
+        'Choose how you want to add a service provider',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'From Contacts',
+            onPress: () => setShowContactsModal(true),
+          },
+          {
+            text: 'Manual Entry',
+            onPress: () => {
+              setFormInitialData(undefined);
+              setShowProviderForm(true);
+            },
+          },
+        ]
+      );
+    }
+  };
+
+  const handleSelectContact = (contact: Partial<ServiceProvider>) => {
+    // Open form with contact data pre-filled
+    setFormInitialData(contact);
+    setShowProviderForm(true);
+  };
+
+  const handleSaveProvider = (provider: Partial<ServiceProvider>) => {
+    // Generate a new ID
+    const newProvider: ServiceProvider = {
+      id: `provider-${Date.now()}`,
+      name: provider.name || '',
+      category: provider.category || 'other',
+      specialization: provider.specialization || '',
+      phone: provider.phone || '',
+      email: provider.email,
+      isBookmarked: provider.isBookmarked || false,
+      isExternal: provider.isExternal || false,
+      notes: provider.notes,
+    };
+
+    setServiceProviders([newProvider, ...serviceProviders]);
+    Alert.alert('Success', `${newProvider.name} has been added as a service provider`);
+  };
 
   const renderFamilyTab = () => {
     const members = activeWorkspace?.members || [];
@@ -151,9 +224,17 @@ export const CollaboratorsScreen: React.FC = () => {
           ListFooterComponent={
             <TouchableOpacity
               style={[styles.addButton, { borderColor: theme.colors.brand.primary }]}
+              onPress={handleAddProvider}
+              activeOpacity={0.7}
             >
+              <MaterialCommunityIcons
+                name="plus-circle"
+                size={20}
+                color={theme.colors.brand.primary}
+                style={{ marginRight: 8 }}
+              />
               <Text style={[styles.addButtonText, { color: theme.colors.brand.primary }]}>
-                + Add Service Provider
+                Add Service Provider
               </Text>
             </TouchableOpacity>
           }
@@ -218,6 +299,23 @@ export const CollaboratorsScreen: React.FC = () => {
 
       {/* Tab Content */}
       {activeTab === 'providers' ? renderProvidersTab() : renderFamilyTab()}
+
+      {/* Modals */}
+      <AddFromContactsModal
+        visible={showContactsModal}
+        onClose={() => setShowContactsModal(false)}
+        onSelectContact={handleSelectContact}
+      />
+
+      <AddProviderForm
+        visible={showProviderForm}
+        onClose={() => {
+          setShowProviderForm(false);
+          setFormInitialData(undefined);
+        }}
+        onSave={handleSaveProvider}
+        initialData={formInitialData}
+      />
     </View>
   );
 };
@@ -366,11 +464,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   addButton: {
+    flexDirection: 'row',
     padding: 16,
     borderRadius: 12,
     borderWidth: 2,
     borderStyle: 'dashed',
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 12,
   },
   addButtonText: {
