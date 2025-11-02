@@ -1,5 +1,5 @@
 // src/features/dashboard/screens/MainDashboard.tsx (updated with theme-aware colors)
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,16 +8,87 @@ import {
   Dimensions,
 } from 'react-native';
 import { Text } from '@rneui/themed';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../../theme/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MainLayout } from '../../../components/layout/MainLayout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AssistantCard } from '../components/AssistantCard';
+import { ChatModeScreen } from '../../chat';
+import { CollaboratorsScreen } from '../../collaborators';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const RECENT_SCREENS_KEY = '@FamilyKnows:recentScreens';
+const MODE_KEY = '@FamilyKnows:interfaceMode';
 
 export const MainDashboard: React.FC = () => {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const [mode, setMode] = useState<'keyboard' | 'chat'>('keyboard');
+  const [recentScreens, setRecentScreens] = useState<string[]>([]);
+  const [activeScreen, setActiveScreen] = useState<string | null>(null);
+
+  // Load saved mode and recent screens on mount
+  useEffect(() => {
+    loadSavedMode();
+    loadRecentScreens();
+  }, []);
+
+  const loadSavedMode = async () => {
+    try {
+      const savedMode = await AsyncStorage.getItem(MODE_KEY);
+      if (savedMode === 'chat' || savedMode === 'keyboard') {
+        setMode(savedMode);
+      }
+    } catch (error) {
+      console.error('Error loading mode:', error);
+    }
+  };
+
+  const loadRecentScreens = async () => {
+    try {
+      const saved = await AsyncStorage.getItem(RECENT_SCREENS_KEY);
+      if (saved) {
+        setRecentScreens(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error loading recent screens:', error);
+    }
+  };
+
+  const saveMode = async (newMode: 'keyboard' | 'chat') => {
+    try {
+      await AsyncStorage.setItem(MODE_KEY, newMode);
+      setMode(newMode);
+    } catch (error) {
+      console.error('Error saving mode:', error);
+    }
+  };
+
+  const trackScreenAccess = async (screenId: string) => {
+    try {
+      // Add to beginning of array, remove duplicates, keep only last 4
+      const updated = [screenId, ...recentScreens.filter(id => id !== screenId)].slice(0, 4);
+      await AsyncStorage.setItem(RECENT_SCREENS_KEY, JSON.stringify(updated));
+      setRecentScreens(updated);
+    } catch (error) {
+      console.error('Error tracking screen:', error);
+    }
+  };
+
+  const handleSwitchMode = () => {
+    const newMode = mode === 'keyboard' ? 'chat' : 'keyboard';
+    saveMode(newMode);
+  };
+
+  const handleCardPress = (screenId: string) => {
+    trackScreenAccess(screenId);
+    if (screenId === 'collaborators') {
+      setActiveScreen('collaborators');
+    }
+    // Add more screen navigation here
+  };
 
   // Use theme colors for dashboard cards
   const dashboardCards = [
@@ -55,6 +126,29 @@ export const MainDashboard: React.FC = () => {
     },
   ];
 
+  // Get cards to display - prioritize recent screens (top 3) + collaborators always at bottom
+  const getDisplayCards = () => {
+    const recent = recentScreens
+      .slice(0, 3)
+      .map(id => dashboardCards.find(card => card.id === id))
+      .filter(Boolean);
+
+    // If less than 3 recent, fill with other cards
+    if (recent.length < 3) {
+      const remainingCards = dashboardCards.filter(
+        card => !recent.find(r => r?.id === card.id) && card.id !== 'collaborators'
+      );
+      recent.push(...remainingCards.slice(0, 3 - recent.length));
+    }
+
+    // Always add collaborators at the end
+    const collaboratorsCard = dashboardCards.find(card => card.id === 'collaborators');
+    if (collaboratorsCard) {
+      return [...recent, collaboratorsCard];
+    }
+    return recent;
+  };
+
   const renderDashboardCard = (card: any) => (
     <TouchableOpacity
       key={card.id}
@@ -63,6 +157,7 @@ export const MainDashboard: React.FC = () => {
         { backgroundColor: theme.colors.utility.secondaryBackground }
       ]}
       activeOpacity={0.7}
+      onPress={() => handleCardPress(card.id)}
     >
       <View style={[styles.cardIconContainer, { backgroundColor: card.bgColor }]}>
         <MaterialCommunityIcons
@@ -86,6 +181,16 @@ export const MainDashboard: React.FC = () => {
     </TouchableOpacity>
   );
 
+  // Show different screen based on activeScreen
+  if (activeScreen === 'collaborators') {
+    return <CollaboratorsScreen />;
+  }
+
+  // Show chat mode if active
+  if (mode === 'chat') {
+    return <ChatModeScreen userName="User" onSwitchToKeyboard={handleSwitchMode} />;
+  }
+
   return (
     <MainLayout activeTab="home" headerTitle="FamilyKnows">
       <ScrollView 
@@ -103,44 +208,12 @@ export const MainDashboard: React.FC = () => {
           </Text>
         </View>
 
-        {/* AI Assistant Card */}
-        <TouchableOpacity
-          style={[
-            styles.aiCard,
-            { 
-              backgroundColor: theme.colors.brand.primary,
-              // Add a subtle gradient effect using secondary color
-              borderWidth: 1,
-              borderColor: theme.colors.brand.secondary + '20',
-            }
-          ]}
-          activeOpacity={0.8}
-        >
-          <View style={styles.aiCardContent}>
-            <View style={styles.aiCardLeft}>
-              <View style={[styles.aiIconContainer, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                <MaterialCommunityIcons
-                  name="robot-happy"
-                  size={36}
-                  color="#fff"
-                />
-              </View>
-              <View style={styles.aiCardText}>
-                <Text style={styles.aiCardTitle}>Lucky Pop</Text>
-                <Text style={styles.aiCardSubtitle}>Your own Virtual Assistant</Text>
-              </View>
-            </View>
-            <MaterialCommunityIcons
-              name="microphone"
-              size={24}
-              color="#fff"
-            />
-          </View>
-        </TouchableOpacity>
+        {/* Assistant Mode Switcher Card */}
+        <AssistantCard mode={mode} onSwitchMode={handleSwitchMode} />
 
-        {/* Dashboard Cards */}
+        {/* Dashboard Cards - Recent + Collaborators */}
         <View style={styles.cardsGrid}>
-          {dashboardCards.map(renderDashboardCard)}
+          {getDisplayCards().map(renderDashboardCard)}
         </View>
 
         {/* Quick Actions */}

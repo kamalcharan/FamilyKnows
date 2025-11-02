@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import { Text, Button } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -13,6 +14,7 @@ import { RouteProp } from '@react-navigation/native';
 import { OnboardingStackParamList } from '../../../navigation/types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { supportedLanguages, Language } from '../../../constants/languages';
+import { KeyboardSetupGuide } from '../components/KeyboardSetupGuide';
 
 type LanguageSelectionNavigationProp = NativeStackNavigationProp<
   OnboardingStackParamList,
@@ -33,6 +35,8 @@ export const LanguageSelectionScreen: React.FC<Props> = ({ navigation, route }) 
   const { theme } = useTheme();
   const { isFromSettings } = route.params;
   const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [showKeyboardGuide, setShowKeyboardGuide] = useState(false);
+  const [testInput, setTestInput] = useState('');
 
   const handleContinue = () => {
     // Save language preference (we'll implement this with AsyncStorage/SQLite later)
@@ -153,15 +157,58 @@ export const LanguageSelectionScreen: React.FC<Props> = ({ navigation, route }) 
           {supportedLanguages.map(renderLanguageOption)}
         </View>
 
+        {/* Test Keyboard Input - Only for non-English languages */}
+        {selectedLanguage !== 'en' && (
+          <View style={styles.testInputContainer}>
+            <Text style={[styles.testInputLabel, { color: theme.colors.utility.primaryText }]}>
+              Test your keyboard:
+            </Text>
+            <TextInput
+              style={[
+                styles.testInput,
+                {
+                  backgroundColor: theme.colors.utility.secondaryBackground,
+                  color: theme.colors.utility.primaryText,
+                  borderColor: theme.colors.brand.primary,
+                }
+              ]}
+              placeholder={
+                selectedLanguage === 'te' ? 'ఇక్కడ టైప్ చేయండి...' :
+                selectedLanguage === 'hi' ? 'यहाँ टाइप करें...' :
+                selectedLanguage === 'ta' ? 'இங்கே தட்டச்சு செய்யவும்...' :
+                'Type here...'
+              }
+              placeholderTextColor={theme.colors.utility.secondaryText}
+              value={testInput}
+              onChangeText={setTestInput}
+              multiline
+            />
+            <TouchableOpacity
+              style={styles.keyboardGuideButton}
+              onPress={() => setShowKeyboardGuide(true)}
+            >
+              <MaterialCommunityIcons
+                name="help-circle-outline"
+                size={20}
+                color={theme.colors.brand.primary}
+              />
+              <Text style={[styles.keyboardGuideText, { color: theme.colors.brand.primary }]}>
+                Can't type in {supportedLanguages.find(l => l.code === selectedLanguage)?.name}?
+                Tap here for keyboard setup guide
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Info Text */}
         <View style={[
           styles.infoContainer,
           { backgroundColor: theme.colors.accent.accent4 + '20' }
         ]}>
-          <MaterialCommunityIcons 
-            name="information" 
-            size={20} 
-            color={theme.colors.brand.primary} 
+          <MaterialCommunityIcons
+            name="information"
+            size={20}
+            color={theme.colors.brand.primary}
           />
           <Text style={[styles.infoText, { color: theme.colors.utility.secondaryText }]}>
             You can change the language anytime from settings
@@ -188,6 +235,14 @@ export const LanguageSelectionScreen: React.FC<Props> = ({ navigation, route }) 
           </TouchableOpacity>
         )}
       </ScrollView>
+
+      {/* Keyboard Setup Guide Modal */}
+      <KeyboardSetupGuide
+        visible={showKeyboardGuide}
+        language={selectedLanguage}
+        languageName={supportedLanguages.find(l => l.code === selectedLanguage)?.name || ''}
+        onClose={() => setShowKeyboardGuide(false)}
+      />
     </View>
   );
 };
@@ -271,6 +326,34 @@ const styles = StyleSheet.create({
   },
   languageNative: {
     fontSize: 14,
+  },
+  testInputContainer: {
+    marginBottom: 20,
+  },
+  testInputLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  testInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    marginBottom: 8,
+  },
+  keyboardGuideButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  keyboardGuideText: {
+    fontSize: 14,
+    flex: 1,
+    fontWeight: '500',
   },
   infoContainer: {
     flexDirection: 'row',
