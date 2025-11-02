@@ -19,7 +19,7 @@ type TabType = 'family' | 'providers';
 export const CollaboratorsScreen: React.FC = () => {
   const { theme } = useTheme();
   const { activeWorkspace } = useWorkspace();
-  const [activeTab, setActiveTab] = useState<TabType>('family');
+  const [activeTab, setActiveTab] = useState<TabType>('providers');
   const [selectedCategory, setSelectedCategory] = useState<ServiceProviderCategory | 'all'>('all');
 
   const filteredProviders =
@@ -174,27 +174,6 @@ export const CollaboratorsScreen: React.FC = () => {
       {/* Tabs */}
       <View style={[styles.tabBar, { backgroundColor: theme.colors.utility.secondaryBackground }]}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'family' && styles.activeTab]}
-          onPress={() => setActiveTab('family')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              { color: theme.colors.utility.secondaryText },
-              activeTab === 'family' && {
-                color: theme.colors.brand.primary,
-                fontWeight: '600',
-              },
-            ]}
-          >
-            Family
-          </Text>
-          {activeTab === 'family' && (
-            <View style={[styles.tabIndicator, { backgroundColor: theme.colors.brand.primary }]} />
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
           style={[styles.tab, activeTab === 'providers' && styles.activeTab]}
           onPress={() => setActiveTab('providers')}
         >
@@ -214,10 +193,31 @@ export const CollaboratorsScreen: React.FC = () => {
             <View style={[styles.tabIndicator, { backgroundColor: theme.colors.brand.primary }]} />
           )}
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'family' && styles.activeTab]}
+          onPress={() => setActiveTab('family')}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              { color: theme.colors.utility.secondaryText },
+              activeTab === 'family' && {
+                color: theme.colors.brand.primary,
+                fontWeight: '600',
+              },
+            ]}
+          >
+            Family
+          </Text>
+          {activeTab === 'family' && (
+            <View style={[styles.tabIndicator, { backgroundColor: theme.colors.brand.primary }]} />
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Tab Content */}
-      {activeTab === 'family' ? renderFamilyTab() : renderProvidersTab()}
+      {activeTab === 'providers' ? renderProvidersTab() : renderFamilyTab()}
     </View>
   );
 };

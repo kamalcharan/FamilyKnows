@@ -1,6 +1,6 @@
 // src/features/collaborators/components/ServiceProviderCard.tsx
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Linking, Share } from 'react-native';
 import { ServiceProvider } from '../../../types/collaborators';
 import { useTheme } from '../../../theme/ThemeContext';
 import { categoryData } from '../../../dummydata';
@@ -23,6 +23,18 @@ export const ServiceProviderCard: React.FC<ServiceProviderCardProps> = ({ provid
   const handleEmail = () => {
     if (provider.email) {
       Linking.openURL(`mailto:${provider.email}`);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const message = `${provider.name}\n${provider.specialization}\n📞 ${provider.phone}${provider.email ? `\n✉️ ${provider.email}` : ''}${provider.notes ? `\n💭 ${provider.notes}` : ''}`;
+      await Share.share({
+        message,
+        title: `Share ${provider.name}`,
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
     }
   };
 
@@ -93,6 +105,12 @@ export const ServiceProviderCard: React.FC<ServiceProviderCardProps> = ({ provid
             <Text style={styles.actionText}>✉️ Email</Text>
           </TouchableOpacity>
         )}
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: theme.colors.accent.accent3 }]}
+          onPress={handleShare}
+        >
+          <Text style={styles.actionText}>🔗 Share</Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );

@@ -14,7 +14,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MainLayout } from '../../../components/layout/MainLayout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AssistantCard } from '../components/AssistantCard';
-import { ChatModeScreen } from '../../chat';
+import { CollaboratorsCard } from '../components/CollaboratorsCard';
+import { ChatModeContent } from '../../chat';
 import { CollaboratorsScreen } from '../../collaborators';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -90,14 +91,14 @@ export const MainDashboard: React.FC = () => {
     // Add more screen navigation here
   };
 
-  // Use theme colors for dashboard cards
+  // Use theme colors for dashboard cards - 6 main categories (excluding collaborators)
   const dashboardCards = [
     {
       id: 'tasks',
       title: 'Tasks',
       icon: 'clipboard-check',
       color: theme.colors.accent.accent1,
-      bgColor: theme.colors.accent.accent1 + '15', // 15% opacity
+      bgColor: theme.colors.accent.accent1 + '15',
       description: 'Manage your daily tasks',
     },
     {
@@ -117,35 +118,46 @@ export const MainDashboard: React.FC = () => {
       description: 'Health records & reminders',
     },
     {
-      id: 'collaborators',
-      title: 'Collaborators',
-      icon: 'account-group',
+      id: 'finance',
+      title: 'Finance',
+      icon: 'cash-multiple',
       color: theme.colors.accent.accent4,
       bgColor: theme.colors.accent.accent4 + '15',
-      description: 'Family members',
+      description: 'Manage finances',
+    },
+    {
+      id: 'documents',
+      title: 'Documents',
+      icon: 'file-document-multiple',
+      color: theme.colors.brand.primary,
+      bgColor: theme.colors.brand.primary + '15',
+      description: 'Store documents',
+    },
+    {
+      id: 'events',
+      title: 'Events',
+      icon: 'calendar-star',
+      color: theme.colors.brand.secondary,
+      bgColor: theme.colors.brand.secondary + '15',
+      description: 'Track events',
     },
   ];
 
-  // Get cards to display - prioritize recent screens (top 3) + collaborators always at bottom
+  // Get cards to display - prioritize recent screens (top 4)
   const getDisplayCards = () => {
     const recent = recentScreens
-      .slice(0, 3)
+      .slice(0, 4)
       .map(id => dashboardCards.find(card => card.id === id))
       .filter(Boolean);
 
-    // If less than 3 recent, fill with other cards
-    if (recent.length < 3) {
+    // If less than 4 recent, fill with other cards
+    if (recent.length < 4) {
       const remainingCards = dashboardCards.filter(
-        card => !recent.find(r => r?.id === card.id) && card.id !== 'collaborators'
+        card => !recent.find(r => r?.id === card.id)
       );
-      recent.push(...remainingCards.slice(0, 3 - recent.length));
+      recent.push(...remainingCards.slice(0, 4 - recent.length));
     }
 
-    // Always add collaborators at the end
-    const collaboratorsCard = dashboardCards.find(card => card.id === 'collaborators');
-    if (collaboratorsCard) {
-      return [...recent, collaboratorsCard];
-    }
     return recent;
   };
 
@@ -186,13 +198,8 @@ export const MainDashboard: React.FC = () => {
     return <CollaboratorsScreen />;
   }
 
-  // Show chat mode if active
-  if (mode === 'chat') {
-    return <ChatModeScreen userName="User" onSwitchToKeyboard={handleSwitchMode} />;
-  }
-
   return (
-    <MainLayout activeTab="home" headerTitle="FamilyKnows">
+    <MainLayout activeTab={mode === 'chat' ? 'chat' : 'home'} headerTitle="FamilyKnows">
       <ScrollView 
         style={[styles.container, { backgroundColor: theme.colors.utility.primaryBackground }]}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + insets.bottom }]} 
@@ -211,10 +218,13 @@ export const MainDashboard: React.FC = () => {
         {/* Assistant Mode Switcher Card */}
         <AssistantCard mode={mode} onSwitchMode={handleSwitchMode} />
 
-        {/* Dashboard Cards - Recent + Collaborators */}
+        {/* Dashboard Cards - Recent 4 cards based on usage */}
         <View style={styles.cardsGrid}>
           {getDisplayCards().map(renderDashboardCard)}
         </View>
+
+        {/* Collaborators Card - Separate from dashboard cards */}
+        <CollaboratorsCard onPress={() => handleCardPress('collaborators')} />
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
