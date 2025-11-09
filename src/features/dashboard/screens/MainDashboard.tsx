@@ -1,5 +1,5 @@
 // src/features/dashboard/screens/MainDashboard.tsx (updated with theme-aware colors)
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,25 +8,100 @@ import {
   Dimensions,
 } from 'react-native';
 import { Text } from '@rneui/themed';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../../theme/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MainLayout } from '../../../components/layout/MainLayout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AssistantCard } from '../components/AssistantCard';
+import { CollaboratorsCard } from '../components/CollaboratorsCard';
+import { ChatModeContent } from '../../chat';
+import { CollaboratorsScreen } from '../../collaborators';
+import { QuickActionCard } from '../../../components/shared/QuickActionCard';
+import { defaultQuickActions } from '../../../dummydata/quickActions';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const RECENT_SCREENS_KEY = '@FamilyKnows:recentScreens';
+const MODE_KEY = '@FamilyKnows:interfaceMode';
 
 export const MainDashboard: React.FC = () => {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const [mode, setMode] = useState<'keyboard' | 'chat'>('keyboard');
+  const [recentScreens, setRecentScreens] = useState<string[]>([]);
+  const [activeScreen, setActiveScreen] = useState<string | null>(null);
+  const [showQuickActions, setShowQuickActions] = useState(false);
 
-  // Use theme colors for dashboard cards
+  // Load saved mode and recent screens on mount
+  useEffect(() => {
+    loadSavedMode();
+    loadRecentScreens();
+  }, []);
+
+  const loadSavedMode = async () => {
+    try {
+      const savedMode = await AsyncStorage.getItem(MODE_KEY);
+      if (savedMode === 'chat' || savedMode === 'keyboard') {
+        setMode(savedMode);
+      }
+    } catch (error) {
+      console.error('Error loading mode:', error);
+    }
+  };
+
+  const loadRecentScreens = async () => {
+    try {
+      const saved = await AsyncStorage.getItem(RECENT_SCREENS_KEY);
+      if (saved) {
+        setRecentScreens(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error loading recent screens:', error);
+    }
+  };
+
+  const saveMode = async (newMode: 'keyboard' | 'chat') => {
+    try {
+      await AsyncStorage.setItem(MODE_KEY, newMode);
+      setMode(newMode);
+    } catch (error) {
+      console.error('Error saving mode:', error);
+    }
+  };
+
+  const trackScreenAccess = async (screenId: string) => {
+    try {
+      // Add to beginning of array, remove duplicates, keep only last 4
+      const updated = [screenId, ...recentScreens.filter(id => id !== screenId)].slice(0, 4);
+      await AsyncStorage.setItem(RECENT_SCREENS_KEY, JSON.stringify(updated));
+      setRecentScreens(updated);
+    } catch (error) {
+      console.error('Error tracking screen:', error);
+    }
+  };
+
+  const handleSwitchMode = () => {
+    const newMode = mode === 'keyboard' ? 'chat' : 'keyboard';
+    saveMode(newMode);
+  };
+
+  const handleCardPress = (screenId: string) => {
+    trackScreenAccess(screenId);
+    if (screenId === 'collaborators') {
+      setActiveScreen('collaborators');
+    }
+    // Add more screen navigation here
+  };
+
+  // Use theme colors for dashboard cards - 6 main categories (excluding collaborators)
   const dashboardCards = [
     {
       id: 'tasks',
       title: 'Tasks',
       icon: 'clipboard-check',
       color: theme.colors.accent.accent1,
-      bgColor: theme.colors.accent.accent1 + '15', // 15% opacity
+      bgColor: theme.colors.accent.accent1 + '15',
       description: 'Manage your daily tasks',
     },
     {
@@ -46,23 +121,57 @@ export const MainDashboard: React.FC = () => {
       description: 'Health records & reminders',
     },
     {
-      id: 'collaborators',
-      title: 'Collaborators',
-      icon: 'account-group',
+      id: 'finance',
+      title: 'Finance',
+      icon: 'cash-multiple',
       color: theme.colors.accent.accent4,
       bgColor: theme.colors.accent.accent4 + '15',
-      description: 'Family members',
+      description: 'Manage finances',
+    },
+    {
+      id: 'documents',
+      title: 'Documents',
+      icon: 'file-document-multiple',
+      color: theme.colors.brand.primary,
+      bgColor: theme.colors.brand.primary + '15',
+      description: 'Store documents',
+    },
+    {
+      id: 'events',
+      title: 'Events',
+      icon: 'calendar-star',
+      color: theme.colors.brand.secondary,
+      bgColor: theme.colors.brand.secondary + '15',
+      description: 'Track events',
     },
   ];
 
-  const renderDashboardCard = (card: any) => (
+  // Get cards to display - prioritize recent screens (top 4)
+  const getDisplayCards = () => {
+    const recent = recentScreens
+      .slice(0, 4)
+      .map(id => dashboardCards.find(card => card.id === id))
+      .filter(Boolean);
+
+    // If less than 4 recent, fill with other cards
+    if (recent.length < 4) {
+      const remainingCards = dashboardCards.filter(
+        card => !recent.find(r => r?.id === card.id)
+      );
+      recent.push(...remainingCards.slice(0, 4 - recent.length));
+    }
+
+    return recent;
+  };
+
+  const renderDashboardCard = (card: any, index: number) => (
     <TouchableOpacity
-      key={card.id}
       style={[
         styles.card,
         { backgroundColor: theme.colors.utility.secondaryBackground }
       ]}
       activeOpacity={0.7}
+      onPress={() => handleCardPress(card.id)}
     >
       <View style={[styles.cardIconContainer, { backgroundColor: card.bgColor }]}>
         <MaterialCommunityIcons
@@ -86,62 +195,45 @@ export const MainDashboard: React.FC = () => {
     </TouchableOpacity>
   );
 
+  // Show different screen based on activeScreen
+  if (activeScreen === 'collaborators') {
+    return <CollaboratorsScreen />;
+  }
+
   return (
-    <MainLayout activeTab="home" headerTitle="FamilyKnows">
-      <ScrollView 
-        style={[styles.container, { backgroundColor: theme.colors.utility.primaryBackground }]}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + insets.bottom }]} 
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Welcome Section */}
-        <View style={styles.welcomeSection}>
-          <Text style={[styles.greeting, { color: theme.colors.utility.secondaryText }]}>
-            Welcome back,
-          </Text>
-          <Text style={[styles.userName, { color: theme.colors.utility.primaryText }]}>
-            User
-          </Text>
-        </View>
-
-        {/* AI Assistant Card */}
-        <TouchableOpacity
-          style={[
-            styles.aiCard,
-            { 
-              backgroundColor: theme.colors.brand.primary,
-              // Add a subtle gradient effect using secondary color
-              borderWidth: 1,
-              borderColor: theme.colors.brand.secondary + '20',
-            }
-          ]}
-          activeOpacity={0.8}
+    <MainLayout activeTab={mode === 'chat' ? 'chat' : 'home'} headerTitle="FamilyKnows">
+      {mode === 'chat' ? (
+        <ChatModeContent userName="User" />
+      ) : (
+        <ScrollView
+          style={[styles.container, { backgroundColor: theme.colors.utility.primaryBackground }]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + insets.bottom }]}
+          showsVerticalScrollIndicator={false}
         >
-          <View style={styles.aiCardContent}>
-            <View style={styles.aiCardLeft}>
-              <View style={[styles.aiIconContainer, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                <MaterialCommunityIcons
-                  name="robot-happy"
-                  size={36}
-                  color="#fff"
-                />
-              </View>
-              <View style={styles.aiCardText}>
-                <Text style={styles.aiCardTitle}>Lucky Pop</Text>
-                <Text style={styles.aiCardSubtitle}>Your own Virtual Assistant</Text>
-              </View>
-            </View>
-            <MaterialCommunityIcons
-              name="microphone"
-              size={24}
-              color="#fff"
-            />
+          {/* Welcome Section */}
+          <View style={styles.welcomeSection}>
+            <Text style={[styles.greeting, { color: theme.colors.utility.secondaryText }]}>
+              Welcome back,
+            </Text>
+            <Text style={[styles.userName, { color: theme.colors.utility.primaryText }]}>
+              User
+            </Text>
           </View>
-        </TouchableOpacity>
 
-        {/* Dashboard Cards */}
+          {/* Assistant Mode Switcher Card */}
+          <AssistantCard mode={mode} onSwitchMode={handleSwitchMode} />
+
+        {/* Dashboard Cards - Recent 4 cards based on usage */}
         <View style={styles.cardsGrid}>
-          {dashboardCards.map(renderDashboardCard)}
+          {getDisplayCards().map((card, index) => (
+            <React.Fragment key={card.id}>
+              {renderDashboardCard(card, index)}
+            </React.Fragment>
+          ))}
         </View>
+
+        {/* Collaborators Card - Separate from dashboard cards */}
+        <CollaboratorsCard onPress={() => handleCardPress('collaborators')} />
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
@@ -152,13 +244,14 @@ export const MainDashboard: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.quickActionButton,
-                { 
+                {
                   backgroundColor: theme.colors.utility.secondaryBackground,
                   borderWidth: 1,
                   borderColor: theme.colors.brand.primary + '20',
                 }
               ]}
               activeOpacity={0.7}
+              onPress={() => setShowQuickActions(true)}
             >
               <MaterialCommunityIcons
                 name="plus-circle"
@@ -218,7 +311,15 @@ export const MainDashboard: React.FC = () => {
             </Text>
           </View>
         </View>
-      </ScrollView>
+        </ScrollView>
+      )}
+
+      {/* Quick Action Card Modal */}
+      <QuickActionCard
+        visible={showQuickActions}
+        onClose={() => setShowQuickActions(false)}
+        actions={defaultQuickActions}
+      />
     </MainLayout>
   );
 };
