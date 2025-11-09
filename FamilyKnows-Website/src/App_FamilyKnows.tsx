@@ -7,6 +7,7 @@ import { getTheme, DEFAULT_THEME } from './config/theme/themeConfig';
 import FamilyKnowsNavbar from './components/familyknows/FamilyKnowsNavbar';
 import FamilyKnowsHero from './components/familyknows/FamilyKnowsHero';
 import TrustSignals from './components/familyknows/TrustSignals';
+import FamilyCentricSection from './components/familyknows/FamilyCentricSection';
 import HowItWorks from './components/familyknows/HowItWorks';
 import StorytellingSection from './components/familyknows/StorytellingSection';
 import Testimonials from './components/familyknows/Testimonials';
@@ -30,6 +31,9 @@ function App_FamilyKnows() {
 
         {/* Trust Signals Section */}
         <TrustSignals />
+
+        {/* Family-Centric vs Fund-Centric Differentiation */}
+        <FamilyCentricSection />
 
         {/* How It Works - 3 Steps */}
         <HowItWorks />

@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: 8rem 2rem 4rem; /* Added 8rem top padding to account for fixed navbar */
   overflow: hidden;
 }
 

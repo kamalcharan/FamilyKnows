@@ -1,0 +1,226 @@
+/* src/components/familyknows/FamilyCentricSection.css */
+
+.family-centric-section {
+  padding: 6rem 2rem;
+  position: relative;
+}
+
+.family-centric-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+.family-centric-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.section-subtitle {
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+/* Comparison Grid */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 2rem;
+  margin-bottom: 4rem;
+  align-items: start;
+}
+
+.comparison-card {
+  padding: 2.5rem 2rem;
+  border: 3px solid;
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.comparison-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+
+.comparison-card.familyknows {
+  position: relative;
+}
+
+.comparison-card.familyknows::before {
+  content: '⭐ RECOMMENDED';
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #28945e, #3db070);
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-icon {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+}
+
+.comparison-card h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.card-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1.5rem;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.feature-list .icon {
+  flex-shrink: 0;
+  font-weight: 700;
+  margin-top: 0.125rem;
+}
+
+/* VS Divider */
+.vs-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vs-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Key Differentiators */
+.key-differentiators {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-bottom: 4rem;
+}
+
+.differentiator-card {
+  padding: 2rem;
+  border: 2px solid;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.differentiator-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+
+.diff-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.differentiator-card h4 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.differentiator-card p {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* CTA */
+.family-centric-cta {
+  text-align: center;
+  padding-top: 2rem;
+  border-top: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+.family-centric-cta p {
+  margin-bottom: 2rem;
+}
+
+.cta-button {
+  padding: 1.25rem 3rem;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 1.125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.cta-button:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .comparison-grid {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+
+  .vs-divider {
+    transform: rotate(90deg);
+  }
+
+  .key-differentiators {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .family-centric-section {
+    padding: 4rem 1.5rem;
+  }
+
+  .section-title {
+    font-size: 2rem;
+  }
+
+  .comparison-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .cta-button {
+    width: 100%;
+  }
+}
