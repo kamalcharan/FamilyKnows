@@ -1,7 +1,7 @@
 // src/components/vikuna/Navbar.tsx
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import useTheme from '../../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 // Styled components for Navbar - using $ prefix for transient props
 const NavbarContainer = styled.nav<{$isScrolled: boolean}>`

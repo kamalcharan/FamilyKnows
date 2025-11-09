@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Calendar, Phone } from 'lucide-react';
-import useTheme from '../../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 const CTABarContainer = styled.div<{ $isVisible: boolean; $isMobile: boolean }>`
   position: fixed;

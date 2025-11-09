@@ -1,7 +1,7 @@
 // src/components/ui/textarea.tsx
 import React, { TextareaHTMLAttributes } from 'react';
 import styled from 'styled-components';
-import useTheme from '../../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   className?: string;

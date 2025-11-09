@@ -1,7 +1,7 @@
 // src/components/ui/input.tsx
 import React, { InputHTMLAttributes } from 'react';
 import styled from 'styled-components';
-import useTheme from '../../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   className?: string;

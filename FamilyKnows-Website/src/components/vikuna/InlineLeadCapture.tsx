@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { ArrowRight, Download, CheckCircle } from 'lucide-react';
-import useTheme from '../../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 const safeColor = (theme: any, path: string, fallback: string = '#000000'): string => {
   const parts = path.split('.');

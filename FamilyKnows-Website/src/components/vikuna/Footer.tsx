@@ -1,7 +1,7 @@
 // src/components/vikuna/Footer.tsx
 import React from 'react';
 import styled from 'styled-components';
-import useTheme from '../../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 // Helper function to safely access theme properties
 const safeColor = (theme: any, path: string, fallback: string = '#000000'): string => {

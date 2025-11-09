@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
-import useTheme from '../../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 import { ArrowRight, Award, TrendingUp, CheckCircle, Shield, Cpu, Settings, Users, Brain, Target, Building2 } from 'lucide-react';
 
 // Helper function to safely access theme properties

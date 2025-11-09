@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
-import useTheme from '../../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 import { RefreshCw, Rocket, Layers, Users, Brain, Search } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 

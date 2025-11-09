@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { X, Download, CheckCircle } from 'lucide-react';
-import useTheme from '../../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 const Overlay = styled.div<{ $isVisible: boolean }>`
   position: fixed;

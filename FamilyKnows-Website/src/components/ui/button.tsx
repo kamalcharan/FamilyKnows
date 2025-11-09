@@ -1,7 +1,7 @@
 // src/components/ui/button.tsx
 import React, { ReactNode, ButtonHTMLAttributes } from 'react';
 import styled, { css } from 'styled-components';
-import useTheme from '../../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 type ButtonVariant = 'default' | 'outline' | 'ghost';
 type ButtonSize = 'default' | 'sm' | 'lg' | 'icon';

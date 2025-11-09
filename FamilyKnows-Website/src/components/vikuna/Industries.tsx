@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
-import useTheme from '../../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 import { CheckCircle, Shield, BarChart3, Users } from 'lucide-react';
 
 // Helper function to safely access theme properties

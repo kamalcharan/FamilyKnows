@@ -1,7 +1,7 @@
 // src/components/ui/progress.tsx
 import React from 'react';
 import styled from 'styled-components';
-import useTheme from '../../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   value?: number;
