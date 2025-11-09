@@ -136,11 +136,12 @@ const FamilyCentricSection: React.FC = () => {
               📋
             </div>
             <h4 style={{ color: theme.colors.text.primary }}>
-              In Case of Death Planning (IDP)
+              Legacy Planning Made Simple
             </h4>
             <p style={{ color: theme.colors.text.secondary }}>
-              Unlike fund management, we help you organize the "In Case of Death" folder digitally -
-              so your family knows exactly where everything is when they need it most.
+              Unlike fund management, we help you organize everything digitally - the "In Case of Death"
+              folder, asset documents, insurance policies - so your family knows exactly where everything
+              is when they need it most.
             </p>
           </div>
 
