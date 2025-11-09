@@ -102,10 +102,10 @@ const EarlyAdopterSection: React.FC = () => {
 
             <div className="card-pricing">
               <div className="price-original" style={{ color: theme.colors.text.disabled }}>
-                ₹1,800/year
+                ₹2,400/year
               </div>
               <div className="price-current" style={{ color: theme.colors.primary.main }}>
-                ₹900
+                ₹1,200
                 <span className="price-period">/year</span>
               </div>
               <div className="price-savings" style={{ color: theme.colors.success.main }}>
@@ -170,7 +170,7 @@ const EarlyAdopterSection: React.FC = () => {
 
             <div className="card-pricing">
               <div className="price-current" style={{ color: theme.colors.text.primary }}>
-                ₹1,800
+                ₹2,400
                 <span className="price-period">/year</span>
               </div>
               <div className="price-note" style={{ color: theme.colors.text.secondary }}>

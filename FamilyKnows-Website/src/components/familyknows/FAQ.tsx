@@ -30,7 +30,7 @@ const FAQ: React.FC = () => {
     },
     {
       question: 'How much does it cost after the early bird offer?',
-      answer: 'Regular pricing will be ₹1,800/year for up to 2 family members. Early bird lifetime members get 50% off forever (₹900/year) plus 3 family members included. This offer is limited to the first 100 spots.',
+      answer: 'Regular pricing will be ₹2,400/year for up to 2 family members. Early bird lifetime members get 50% off forever (₹1,200/year) plus 3 family members included. This offer is limited to the first 100 spots.',
     },
     {
       question: 'What if I need to cancel?',

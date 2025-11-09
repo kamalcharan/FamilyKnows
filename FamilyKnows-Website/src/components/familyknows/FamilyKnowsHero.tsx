@@ -92,8 +92,8 @@ const FamilyKnowsHero: React.FC = () => {
             <div className="scarcity-divider"></div>
             <div className="scarcity-offer">
               <div className="offer-discount">
-                <span className="original-price">₹1,800/year</span>
-                <span className="discounted-price" style={{ color: theme.colors.primary.main }}>₹900/year</span>
+                <span className="original-price">₹2,400/year</span>
+                <span className="discounted-price" style={{ color: theme.colors.primary.main }}>₹1,200/year</span>
               </div>
               <div className="offer-perks">
                 ✓ 50% Off Lifetime &nbsp;&nbsp; ✓ 3 Family Members Included

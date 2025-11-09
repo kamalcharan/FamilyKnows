@@ -109,7 +109,7 @@ const FamilyCentricSection: React.FC = () => {
               </li>
               <li style={{ color: theme.colors.text.secondary }}>
                 <span className="icon" style={{ color: theme.colors.success.main }}>✓</span>
-                <span>Affordable (₹900/year)</span>
+                <span>Affordable (₹1,200/year)</span>
               </li>
               <li style={{ color: theme.colors.text.secondary }}>
                 <span className="icon" style={{ color: theme.colors.success.main }}>✓</span>
