@@ -8,7 +8,7 @@ import FamilyKnowsHero from './components/familyknows/FamilyKnowsHero';
 import TrustSignals from './components/familyknows/TrustSignals';
 import StorytellingSection from './components/familyknows/StorytellingSection';
 import EarlyAdopterSection from './components/familyknows/EarlyAdopterSection';
-import Footer from './components/vikuna/Footer';
+import FamilyKnowsFooter from './components/familyknows/FamilyKnowsFooter';
 
 function App_FamilyKnows() {
   // Load default theme (ModernFamily)
@@ -30,7 +30,7 @@ function App_FamilyKnows() {
         <EarlyAdopterSection />
 
         {/* Footer */}
-        <Footer />
+        <FamilyKnowsFooter />
       </div>
     </ThemeProvider>
   );

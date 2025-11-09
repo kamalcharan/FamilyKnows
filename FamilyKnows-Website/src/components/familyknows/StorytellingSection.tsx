@@ -1,11 +1,20 @@
 // src/components/familyknows/StorytellingSection.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../hooks/useTheme';
 import './StorytellingSection.css';
 
 const StorytellingSection: React.FC = () => {
   const { theme } = useTheme();
   const [activeStory, setActiveStory] = useState(0);
+
+  // Auto-rotate stories every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveStory((prev) => (prev + 1) % 3); // Cycle through 0, 1, 2
+    }, 5000); // Change every 5 seconds
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
 
   const stories = [
     {
