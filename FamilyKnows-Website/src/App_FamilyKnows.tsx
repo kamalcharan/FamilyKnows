@@ -4,10 +4,15 @@
 import React from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { getTheme, DEFAULT_THEME } from './config/theme/themeConfig';
+import FamilyKnowsNavbar from './components/familyknows/FamilyKnowsNavbar';
 import FamilyKnowsHero from './components/familyknows/FamilyKnowsHero';
 import TrustSignals from './components/familyknows/TrustSignals';
+import HowItWorks from './components/familyknows/HowItWorks';
 import StorytellingSection from './components/familyknows/StorytellingSection';
+import Testimonials from './components/familyknows/Testimonials';
 import EarlyAdopterSection from './components/familyknows/EarlyAdopterSection';
+import MobileAppShowcase from './components/familyknows/MobileAppShowcase';
+import FAQ from './components/familyknows/FAQ';
 import FamilyKnowsFooter from './components/familyknows/FamilyKnowsFooter';
 
 function App_FamilyKnows() {
@@ -17,17 +22,32 @@ function App_FamilyKnows() {
   return (
     <ThemeProvider initialTheme={defaultTheme}>
       <div className="familyknows-app">
+        {/* Navbar */}
+        <FamilyKnowsNavbar />
+
         {/* Hero Section with Scarcity & Dual CTA */}
         <FamilyKnowsHero />
 
         {/* Trust Signals Section */}
         <TrustSignals />
 
+        {/* How It Works - 3 Steps */}
+        <HowItWorks />
+
         {/* Storytelling - Why FamilyKnows? */}
         <StorytellingSection />
 
+        {/* Testimonials from Beta Users */}
+        <Testimonials />
+
         {/* Early Adopter Offer & Features */}
         <EarlyAdopterSection />
+
+        {/* Mobile App Screenshots with 3D Carousel */}
+        <MobileAppShowcase />
+
+        {/* FAQ Section */}
+        <FAQ />
 
         {/* Footer */}
         <FamilyKnowsFooter />

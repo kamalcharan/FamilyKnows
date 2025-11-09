@@ -24,7 +24,7 @@ const FamilyKnowsFooter: React.FC = () => {
               <span className="logo-text">FamilyKnows</span>
             </div>
             <p className="footer-tagline">
-              Your Family Office App - Secure, Private, and Built for Indian Families
+              Your Family Office App - Secure, Private, and Built for Families Worldwide
             </p>
             <div className="footer-badges">
               <span className="badge">🔐 End-to-End Encrypted</span>

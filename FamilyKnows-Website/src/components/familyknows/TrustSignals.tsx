@@ -220,13 +220,14 @@ const TrustSignals: React.FC = () => {
             background: `linear-gradient(135deg, ${theme.colors.background.dark}, ${theme.colors.primary.dark})`,
           }}
         >
-          <div className="statement-icon">🛡️</div>
+          <div className="statement-icon">🌍</div>
           <h3 style={{ color: theme.colors.common.white }}>
-            Built for Indian Families, By Indian Founders
+            Family Office for Everyone - Proudly Made in India 🇮🇳
           </h3>
           <p style={{ color: theme.colors.common.white, opacity: 0.9 }}>
-            We understand the unique needs of Indian families - from joint family structures to
-            multi-generational wealth management. FamilyKnows is designed with your values at the core.
+            We understand multi-generational wealth, joint families, and local language needs -
+            because we're builders who've lived it. Whether you're in Mumbai, Toronto, or Dubai -
+            if your family manages wealth across generations and languages, FamilyKnows is for you.
           </p>
         </div>
       </div>
