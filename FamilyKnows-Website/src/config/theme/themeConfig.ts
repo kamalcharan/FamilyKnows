@@ -56,6 +56,10 @@ export type ThemeKey = keyof typeof themes;
 
 // Default theme
 export const DEFAULT_THEME: ThemeKey = 'modernFamily';
+//export const DEFAULT_THEME: ThemeKey = 'blueFoundation';
+//export const DEFAULT_THEME: ThemeKey = 'cleanEnergetic';
+
+
 
 // Get theme by key
 export const getTheme = (themeKey: ThemeKey): Theme => {
