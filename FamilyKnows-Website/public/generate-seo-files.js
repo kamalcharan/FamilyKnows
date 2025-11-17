@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // scripts/generate-seo-files.js
-// Vite + TypeScript compatible version for Vikuna Technologies
+// Vite + TypeScript compatible version for FamilyKnows
 
 import fs from 'fs';
 import path from 'path';

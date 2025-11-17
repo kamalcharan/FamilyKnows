@@ -32,5 +32,5 @@
   <circle cx="400" cy="480" r="15" fill="#EEEEEE" stroke="#CCCCCC" stroke-width="2" />
   
   <!-- Text -->
-  <text x="400" y="530" font-family="Arial" font-size="24" fill="#212121" text-anchor="middle">Vikuna Dashboard</text>
+  <text x="400" y="530" font-family="Arial" font-size="24" fill="#212121" text-anchor="middle">FamilyKnows App</text>
 </svg>

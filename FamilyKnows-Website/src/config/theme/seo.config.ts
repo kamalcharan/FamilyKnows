@@ -4,8 +4,8 @@ import { SEO_CONSTANTS } from '../utils/constants/seo.constants';
 export const SEO_CONFIG = {
   // Global SEO settings
   GLOBAL: {
-    titleTemplate: '%s | Vikuna Technologies - Digital Transformation Consulting',
-    defaultTitle: 'Vikuna Technologies - Where 70% of Transformations Fail, We Deliver Success',
+    titleTemplate: '%s | FamilyKnows - The Family Office App for Everyone',
+    defaultTitle: 'FamilyKnows - Secure Family Collaboration Platform Built in India',
     description: SEO_CONSTANTS.SITE_DESCRIPTION,
     openGraph: {
       type: 'website',
@@ -14,10 +14,10 @@ export const SEO_CONFIG = {
       siteName: SEO_CONSTANTS.SITE_NAME,
       images: [
         {
-          url: `${SEO_CONSTANTS.SITE_URL}/images/og-transformation.jpg`,
+          url: `${SEO_CONSTANTS.SITE_URL}/images/og-familyknows.jpg`,
           width: 1200,
           height: 630,
-          alt: 'Vikuna Technologies - Digital Transformation Consulting'
+          alt: 'FamilyKnows - The Family Office App for Everyone'
         }
       ]
     },

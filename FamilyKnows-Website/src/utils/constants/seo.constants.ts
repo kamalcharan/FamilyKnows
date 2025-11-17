@@ -1,9 +1,9 @@
 export const SEO_CONSTANTS = {
-  SITE_NAME: 'Vikuna Technologies',
-  SITE_URL: 'https://vikuna.io',
-  SITE_DESCRIPTION: 'Digital transformation and AI strategy consulting for business leaders. Expert-led transformation services that turn hesitation into confident action with measurable results.',
-  DEFAULT_IMAGE: 'https://vikuna.io/og-image.jpg',
-  TWITTER_HANDLE: '@vikuna_tech',
+  SITE_NAME: 'FamilyKnows',
+  SITE_URL: 'https://familyknows.in',
+  SITE_DESCRIPTION: 'The Family Office App for Everyone. Secure, private family collaboration platform built in India. Manage your family\'s important information, documents, and memories in one place.',
+  DEFAULT_IMAGE: 'https://familyknows.in/og-image.jpg',
+  TWITTER_HANDLE: '@familyknows_app',
   
   // Primary Keywords - Problem-focused
   PRIMARY_KEYWORDS: [
