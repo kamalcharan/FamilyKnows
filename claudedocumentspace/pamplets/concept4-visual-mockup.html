@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vikuna Event Pamphlet - Concept 4: Entrepreneur's Journey</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f0f0;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2563EB;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6B7280;
+            margin-bottom: 40px;
+        }
+
+        .comparison-note {
+            background: #DBEAFE;
+            border-left: 4px solid #2563EB;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .comparison-note h3 {
+            color: #1E40AF;
+            margin-bottom: 10px;
+        }
+
+        .pamphlet-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 1024px) {
+            .pamphlet-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pamphlet-side {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+
+        .side-label {
+            background: #1F2937;
+            color: white;
+            padding: 10px 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .pamphlet-content {
+            padding: 40px;
+        }
+
+        /* SIDE 1 STYLES */
+        .logo-placeholder {
+            width: 180px;
+            height: 55px;
+            background: linear-gradient(135deg, #2563EB, #1D4ED8);
+            margin: 0 auto 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+
+        .main-question {
+            font-size: 26px;
+            font-weight: 700;
+            color: #2563EB;
+            text-align: center;
+            margin: 25px 0 10px;
+        }
+
+        .subheadline {
+            text-align: center;
+            color: #6B7280;
+            font-size: 13px;
+            margin-bottom: 30px;
+        }
+
+        .journey-stage {
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .journey-stage.stage1 {
+            background: #EFF6FF;
+            border: 2px solid #2563EB;
+        }
+
+        .journey-stage.stage2 {
+            background: #F0FDF4;
+            border: 2px solid #10B981;
+        }
+
+        .journey-stage.stage3 {
+            background: #FFF7ED;
+            border: 2px solid #F97316;
+        }
+
+        .stage-header {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid currentColor;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stage1 .stage-header { color: #2563EB; }
+        .stage2 .stage-header { color: #10B981; }
+        .stage3 .stage-header { color: #F97316; }
+
+        .problem-quote {
+            font-size: 14px;
+            font-style: italic;
+            color: #1F2937;
+            margin: 15px 0;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .problem-quote:before {
+            content: '"';
+            font-size: 40px;
+            position: absolute;
+            left: 5px;
+            top: -5px;
+            opacity: 0.2;
+        }
+
+        .context-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1F2937;
+            margin: 15px 0 10px;
+        }
+
+        .pain-points {
+            list-style: none;
+            margin: 10px 0;
+            font-size: 11px;
+        }
+
+        .pain-points li {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+            color: #4B5563;
+        }
+
+        .stage1 .pain-points li:before { content: "•"; color: #F97316; }
+        .stage2 .pain-points li:before { content: "•"; color: #F97316; }
+        .stage3 .pain-points li:before { content: "•"; color: #F97316; }
+
+        .pain-points li:before {
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .solution-header {
+            font-size: 13px;
+            font-weight: 700;
+            color: #10B981;
+            margin: 15px 0 8px;
+        }
+
+        .solution-header:before {
+            content: "✓";
+            margin-right: 5px;
+        }
+
+        .solution-description {
+            font-size: 11px;
+            color: #1F2937;
+            line-height: 1.5;
+        }
+
+        .qr-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .qr-placeholder {
+            width: 80px;
+            height: 80px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 9px;
+            text-align: center;
+            flex-shrink: 0;
+            border-radius: 4px;
+        }
+
+        .qr-label {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .qr-label .benefit {
+            display: block;
+            font-size: 10px;
+            font-weight: 400;
+            margin-top: 2px;
+            color: #6B7280;
+        }
+
+        .stage1 .qr-label { color: #2563EB; }
+        .stage2 .qr-label { color: #F97316; }
+        .stage3 .qr-label { color: #F97316; }
+
+        .flip-cta {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #E5E7EB;
+            color: #F97316;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* SIDE 2 STYLES */
+        .about-section {
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2563EB;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #E5E7EB;
+        }
+
+        .about-text {
+            font-size: 11px;
+            color: #4B5563;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .trust-indicators {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .trust-box {
+            background: #EFF6FF;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .trust-box .icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .trust-box h4 {
+            font-size: 12px;
+            font-weight: 700;
+            color: #2563EB;
+            margin-bottom: 5px;
+        }
+
+        .trust-box p {
+            font-size: 10px;
+            color: #6B7280;
+        }
+
+        .testimonials {
+            margin: 30px 0;
+        }
+
+        .testimonial {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .testimonial.healthcare {
+            background: #EFF6FF;
+            border-left: 4px solid #2563EB;
+        }
+
+        .testimonial.realestate {
+            background: #F0FDF4;
+            border-left: 4px solid #10B981;
+        }
+
+        .testimonial.financial {
+            background: #FFF7ED;
+            border-left: 4px solid #F97316;
+        }
+
+        .testimonial-text {
+            font-style: italic;
+            color: #1F2937;
+            margin-bottom: 10px;
+        }
+
+        .testimonial-author {
+            font-size: 10px;
+            color: #6B7280;
+            font-weight: 600;
+        }
+
+        .exclusive-offer {
+            background: #FFF7ED;
+            border: 3px solid #F97316;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .exclusive-offer h3 {
+            color: #F97316;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .exclusive-offer .main-text {
+            font-weight: 700;
+            font-size: 13px;
+            color: #1F2937;
+            margin-bottom: 15px;
+        }
+
+        .benefits-list {
+            list-style: none;
+            margin: 15px 0;
+            text-align: left;
+            display: inline-block;
+        }
+
+        .benefits-list li {
+            font-size: 12px;
+            margin: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .benefits-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10B981;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .urgency {
+            margin-top: 15px;
+            font-weight: 700;
+            font-size: 11px;
+            color: #EF4444;
+        }
+
+        .secondary-cta {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #F97316;
+            font-size: 10px;
+            font-style: italic;
+            color: #6B7280;
+        }
+
+        .contact-section {
+            background: #F3F4F6;
+            padding: 25px;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .contact-details h4 {
+            color: #2563EB;
+            font-size: 16px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #2563EB;
+            padding-bottom: 8px;
+        }
+
+        .contact-info {
+            font-size: 11px;
+            color: #4B5563;
+        }
+
+        .contact-item {
+            margin: 10px 0;
+        }
+
+        .contact-item .icon {
+            display: inline-block;
+            width: 20px;
+            margin-right: 8px;
+        }
+
+        .master-qr-section {
+            text-align: center;
+        }
+
+        .master-qr-section .qr-placeholder {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 10px;
+        }
+
+        .master-qr-section .label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #2563EB;
+        }
+
+        .master-qr-section .sublabel {
+            font-size: 9px;
+            color: #6B7280;
+        }
+
+        .footer-message {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #E5E7EB;
+        }
+
+        .footer-message p {
+            font-size: 10px;
+            color: #6B7280;
+            margin-bottom: 10px;
+        }
+
+        .footer-message .cta {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2563EB;
+        }
+
+        .comparison-table {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-top: 40px;
+        }
+
+        .comparison-table h2 {
+            color: #2563EB;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        th {
+            background: #F3F4F6;
+            font-weight: 700;
+            color: #1F2937;
+        }
+
+        .concept2 {
+            background: #FFF7ED;
+        }
+
+        .concept4 {
+            background: #EFF6FF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Vikuna Event Pamphlet - Concept 4</h1>
+        <p class="subtitle">"Entrepreneur's Journey" Design (2-Sided A4)</p>
+
+        <div class="comparison-note">
+            <h3>🔍 Concept 4 Approach</h3>
+            <p><strong>Journey-Based Design:</strong> This pamphlet meets entrepreneurs where they are in their journey, creating personal connection through empathy and stage-based identification. More sophisticated and relationship-focused than Concept 2.</p>
+            <p style="margin-top: 10px;"><strong>Best for:</strong> Professional events, executive gatherings, relationship-building focus, brand building alongside lead generation.</p>
+        </div>
+
+        <div class="pamphlet-wrapper">
+            <!-- SIDE 1 - FRONT -->
+            <div class="pamphlet-side">
+                <div class="side-label">SIDE 1 - FRONT (Your Journey)</div>
+                <div class="pamphlet-content">
+                    <div class="logo-placeholder">
+                        VIKUNA LOGO
+                    </div>
+
+                    <div class="main-question">
+                        WHERE ARE YOU IN YOUR JOURNEY?
+                    </div>
+
+                    <p class="subheadline">
+                        We Meet Entrepreneurs at Every Stage
+                    </p>
+
+                    <!-- Stage 1 -->
+                    <div class="journey-stage stage1">
+                        <div class="stage-header">
+                            📍 STAGE 1: GROWING YOUR BUSINESS
+                        </div>
+
+                        <div class="problem-quote">
+                            I need better systems, strategy, and AI expertise
+                        </div>
+
+                        <p class="context-text">You're scaling, but:</p>
+                        <ul class="pain-points">
+                            <li>Technology decisions feel overwhelming</li>
+                            <li>Competitors are moving faster with AI</li>
+                            <li>You need Fortune 500 expertise on startup budget</li>
+                        </ul>
+
+                        <div class="solution-header">VIKUNA CONSULTING can help</div>
+                        <div class="solution-description">
+                            <strong>CDO/CAiO as a Service</strong><br>
+                            AI Strategy • Training • Implementation<br>
+                            Executive guidance without executive cost
+                        </div>
+
+                        <div class="qr-section">
+                            <div class="qr-placeholder">QR CODE<br>50mm</div>
+                            <div class="qr-label">
+                                📅 <strong>BOOK FREE CONSULTATION</strong>
+                                <span class="benefit">AI Strategy Session<br>(Worth ₹15,000)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 2 -->
+                    <div class="journey-stage stage2">
+                        <div class="stage-header">
+                            📍 STAGE 2: SCALING & MANAGING COMPLEXITY
+                        </div>
+
+                        <div class="problem-quote">
+                            I'm losing track of contracts, vendors, renewals
+                        </div>
+
+                        <p class="context-text">Your business is growing, but:</p>
+                        <ul class="pain-points">
+                            <li>Contracts scattered across emails and files</li>
+                            <li>Missing renewal deadlines costs you lakhs</li>
+                            <li>Vendor management is becoming chaotic</li>
+                            <li>You need systems that scale with you</li>
+                        </ul>
+
+                        <div class="solution-header">CONTRACTNEST can help</div>
+                        <div class="solution-description">
+                            <strong>AI-Powered Contract Management</strong><br>
+                            Never miss renewals • Centralized docs<br>
+                            Smart alerts • Save ₹5-20L annually<br>
+                            Built for growing businesses like yours
+                        </div>
+
+                        <div class="qr-section">
+                            <div class="qr-placeholder">QR CODE<br>50mm</div>
+                            <div class="qr-label">
+                                🎁 <strong>JOIN WAITLIST</strong>
+                                <span class="benefit">Get 30% Lifetime Discount<br>+ Priority Early Access</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 3 -->
+                    <div class="journey-stage stage3">
+                        <div class="stage-header">
+                            📍 PERSONAL: PROTECTING WHAT MATTERS MOST
+                        </div>
+
+                        <div class="problem-quote">
+                            I need my family's important information organized
+                        </div>
+
+                        <p class="context-text">As a busy entrepreneur:</p>
+                        <ul class="pain-points">
+                            <li>Family contacts, medical records are scattered</li>
+                            <li>In emergencies, crucial info isn't accessible</li>
+                            <li>Your family doesn't know where everything is</li>
+                            <li>You want peace of mind for loved ones</li>
+                        </ul>
+
+                        <div class="solution-header">FAMILYKNOWS can help</div>
+                        <div class="solution-description">
+                            <strong>Your Family's Emergency-Ready Hub</strong><br>
+                            Contacts • Medical records • Documents<br>
+                            Insurance • Schools • Service providers<br>
+                            Everything in one secure place
+                        </div>
+
+                        <div class="qr-section">
+                            <div class="qr-placeholder">QR CODE<br>50mm</div>
+                            <div class="qr-label">
+                                🎁 <strong>PRIORITY BETA ACCESS</strong>
+                                <span class="benefit">First 100 Users Get<br>1 Year Premium FREE</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flip-cta">
+                        ↓↓↓ FLIP FOR MORE INFO ↓↓↓
+                    </div>
+                </div>
+            </div>
+
+            <!-- SIDE 2 - BACK -->
+            <div class="pamphlet-side">
+                <div class="side-label">SIDE 2 - BACK (About & Offer)</div>
+                <div class="pamphlet-content">
+                    <div class="logo-placeholder">
+                        VIKUNA LOGO
+                    </div>
+
+                    <!-- About Section -->
+                    <div class="about-section">
+                        <h2 class="section-header">ABOUT VIKUNA</h2>
+                        <div class="about-text">
+                            <p>We build AI-powered solutions and provide strategic guidance to help Indian businesses transform and grow.</p>
+                            <p style="margin-top: 10px;">Our team brings Fortune 500 experience to growing entrepreneurs—practical expertise without the enterprise price tag.</p>
+                            <p style="margin-top: 10px;">Whether you're navigating digital transformation, managing business complexity, or protecting what matters most, we have solutions designed for your journey.</p>
+                        </div>
+
+                        <div class="trust-indicators">
+                            <div class="trust-box">
+                                <div class="icon">🤝</div>
+                                <h4>TRUSTED BY 50+</h4>
+                                <p>Indian Businesses</p>
+                            </div>
+                            <div class="trust-box">
+                                <div class="icon">💡</div>
+                                <h4>PRACTICAL, NOT BUZZWORDS</h4>
+                                <p>Real solutions that work</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Testimonials -->
+                    <div class="testimonials">
+                        <h2 class="section-header">WHAT ENTREPRENEURS SAY</h2>
+
+                        <div class="testimonial healthcare">
+                            <div class="testimonial-text">
+                                "Vikuna helped us implement AI in 90 days, not 9 months. Practical guidance, real results."
+                            </div>
+                            <div class="testimonial-author">
+                                — Dr. Rajesh Kumar<br>
+                                Healthcare Provider, Mumbai
+                            </div>
+                        </div>
+
+                        <div class="testimonial realestate">
+                            <div class="testimonial-text">
+                                "ContractNest saved us ₹12 lakhs in the first year by catching missed renewals we didn't even know about. Game-changer for our operations."
+                            </div>
+                            <div class="testimonial-author">
+                                — Priya Sharma<br>
+                                Real Estate Developer, Bangalore
+                            </div>
+                        </div>
+
+                        <div class="testimonial financial">
+                            <div class="testimonial-text">
+                                "Finally, one place for all family information. When my wife had an emergency, everything was right there. Peace of mind is priceless."
+                            </div>
+                            <div class="testimonial-author">
+                                — Amit Patel<br>
+                                Financial Advisor, Pune
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exclusive Offer -->
+                    <div class="exclusive-offer">
+                        <h3>🎁 EXCLUSIVE EVENT OFFER</h3>
+                        <div class="main-text">
+                            SCAN ANY QR CODE FROM THE OTHER SIDE<br>
+                            AND GET ALL 3 BENEFITS:
+                        </div>
+                        <ul class="benefits-list">
+                            <li>Free AI Strategy Consultation (Worth ₹15,000)</li>
+                            <li>30% OFF ContractNest for Life</li>
+                            <li>1 Year FamilyKnows Premium FREE</li>
+                        </ul>
+                        <div class="urgency">
+                            ⏰ Limited to First 50 Entrepreneurs Who Scan<br>
+                            📅 Offer Valid Until: [Event Date + 30 Days]
+                        </div>
+                        <div class="secondary-cta">
+                            Already know what you need?<br>
+                            Scan the master QR below ↓
+                        </div>
+                    </div>
+
+                    <!-- Contact Section -->
+                    <div class="contact-section">
+                        <div class="contact-details">
+                            <h4>CONNECT WITH VIKUNA</h4>
+                            <div class="contact-info">
+                                <div class="contact-item">
+                                    <span class="icon">📧</span>
+                                    <strong>Email:</strong> connect@vikuna.com
+                                </div>
+                                <div class="contact-item">
+                                    <span class="icon">📱</span>
+                                    <strong>Phone:</strong> +91 [YOUR NUMBER]
+                                </div>
+                                <div class="contact-item">
+                                    <span class="icon">🌐</span>
+                                    <strong>Website:</strong> www.vikuna.com
+                                </div>
+                                <div class="contact-item">
+                                    <span class="icon">💼</span>
+                                    <strong>LinkedIn:</strong> /company/vikuna
+                                </div>
+                                <div class="contact-item">
+                                    <span class="icon">📍</span>
+                                    <strong>Location:</strong> Bangalore, India
+                                </div>
+                            </div>
+                        </div>
+                        <div class="master-qr-section">
+                            <div class="qr-placeholder">QR CODE<br>60mm</div>
+                            <div class="label">SCAN FOR ALL LINKS</div>
+                            <div class="sublabel">Event Hub & Info</div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Message -->
+                    <div class="footer-message">
+                        <p>Join 50+ entrepreneurs transforming their businesses<br>with AI, better systems, and peace of mind.</p>
+                        <div class="cta">YOUR JOURNEY STARTS HERE</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Table -->
+        <div class="comparison-table">
+            <h2>📊 Concept 2 vs Concept 4 - Quick Comparison</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th class="concept2">Concept 2: Problem→Solution</th>
+                        <th class="concept4">Concept 4: Journey</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Opening</strong></td>
+                        <td class="concept2">Problems (fear-based)</td>
+                        <td class="concept4">Journey stages (aspiration)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tone</strong></td>
+                        <td class="concept2">Urgent, problem-focused</td>
+                        <td class="concept4">Empathetic, growth-focused</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Organization</strong></td>
+                        <td class="concept2">Product-centric</td>
+                        <td class="concept4">Customer-centric</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Engagement</strong></td>
+                        <td class="concept2">"Fix your problems"</td>
+                        <td class="concept4">"Where are you?"</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Best For</strong></td>
+                        <td class="concept2">Action-oriented entrepreneurs</td>
+                        <td class="concept4">Reflective entrepreneurs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Expected Scan Rate</strong></td>
+                        <td class="concept2">5% (100 scans)</td>
+                        <td class="concept4">3-4% (60-80 scans)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Lead Quality</strong></td>
+                        <td class="concept2">Good</td>
+                        <td class="concept4">Higher (better fit)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Brand Building</strong></td>
+                        <td class="concept2">Moderate</td>
+                        <td class="concept4">Strong</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="margin-top: 30px; padding: 20px; background: #F0FDF4; border-radius: 8px;">
+                <h3 style="color: #059669; margin-bottom: 10px;">💡 Recommendation</h3>
+                <p style="color: #1F2937; font-size: 14px; line-height: 1.6;">
+                    <strong>Use Concept 2</strong> if you need immediate action, direct response, and maximum conversions.<br><br>
+                    <strong>Use Concept 4</strong> if you're building relationships, have a sophisticated audience, and prioritize brand building alongside lead generation.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
