@@ -1,0 +1,282 @@
+/* src/components/familyknows/MobileAppShowcase.css */
+
+.mobile-app-showcase {
+  padding: 6rem 2rem;
+  overflow: hidden;
+}
+
+.showcase-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+.showcase-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.showcase-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.showcase-subtitle {
+  font-size: 1.125rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* 3D Phone Carousel */
+.phone-carousel-3d {
+  height: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 2000px;
+  position: relative;
+  margin-bottom: 3rem;
+}
+
+.phone-3d {
+  position: absolute;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.phone-3d.active {
+  cursor: default;
+}
+
+/* Phone Frame */
+.phone-frame {
+  width: 280px;
+  height: 600px;
+  border-radius: 40px;
+  padding: 12px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+/* Notch */
+.phone-notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 28px;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  z-index: 10;
+}
+
+/* Screen */
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 32px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1) inset;
+}
+
+.screen-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.screen-placeholder {
+  text-align: center;
+}
+
+.screen-icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.screen-text {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.screen-subtext {
+  font-size: 1rem;
+  opacity: 0.95;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Home Indicator */
+.home-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 4px;
+  border-radius: 2px;
+  opacity: 0.3;
+}
+
+/* Screen Navigation */
+.screen-nav {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.screen-nav-item {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid;
+  border-radius: 50px;
+  background: transparent;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.screen-nav-item:hover {
+  transform: translateY(-2px);
+}
+
+.screen-nav-item.active {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Download Section */
+.download-section {
+  text-align: center;
+}
+
+.download-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
+
+.download-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.store-button {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.store-button:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.store-icon {
+  font-size: 2.5rem;
+}
+
+.store-text {
+  text-align: left;
+}
+
+.store-label {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin-bottom: 0.125rem;
+}
+
+.store-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.download-note {
+  font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .phone-carousel-3d {
+    height: 650px;
+  }
+
+  .phone-3d {
+    transform: translateX(0) !important;
+    position: relative;
+    margin: 0 auto;
+  }
+
+  .phone-3d:not(.active) {
+    display: none;
+  }
+
+  .phone-3d.active {
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-app-showcase {
+    padding: 4rem 1.5rem;
+  }
+
+  .showcase-title {
+    font-size: 2rem;
+  }
+
+  .phone-carousel-3d {
+    height: 600px;
+  }
+
+  .phone-frame {
+    width: 240px;
+    height: 520px;
+  }
+
+  .screen-icon {
+    font-size: 4rem;
+  }
+
+  .screen-text {
+    font-size: 1.5rem;
+  }
+
+  .screen-nav {
+    flex-direction: column;
+    max-width: 300px;
+    margin: 0 auto 2rem;
+  }
+
+  .download-buttons {
+    flex-direction: column;
+    max-width: 300px;
+    margin: 0 auto 1.5rem;
+  }
+
+  .store-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
