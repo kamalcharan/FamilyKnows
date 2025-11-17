@@ -396,7 +396,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({
             className={errors.agreeToTerms ? 'border-red-500' : ''}
           />
           <Label htmlFor="agreeToTerms" className="text-xs text-gray-600 leading-tight cursor-pointer">
-            I agree to Vikuna's{' '}
+            I agree to FamilyKnows{' '}
             <a href="/terms" className="text-blue-600 hover:underline" target="_blank">
               Terms of Service
             </a>{' '}
