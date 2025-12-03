@@ -70,9 +70,10 @@ interface TimelineItemProps {
   index: number;
   theme: any;
   isLast: boolean;
+  onPress: () => void;
 }
 
-const TimelineItem: React.FC<TimelineItemProps> = ({ item, index, theme, isLast }) => {
+const TimelineItem: React.FC<TimelineItemProps> = ({ item, index, theme, isLast, onPress }) => {
   const slideAnim = useRef(new Animated.Value(50)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -154,6 +155,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ item, index, theme, isLast 
       {/* Content Card */}
       <TouchableOpacity
         activeOpacity={0.8}
+        onPress={onPress}
         style={[
           styles.cardContainer,
           isNow ? { backgroundColor: theme.colors.semantic.success + '15', borderColor: theme.colors.semantic.success, borderWidth: 1 } :
@@ -247,6 +249,7 @@ export const HealthTimelineScreen: React.FC = () => {
                 index={index}
                 theme={theme}
                 isLast={index === TIMELINE_DATA.length - 1}
+                onPress={() => (navigation as any).navigate('HealthRecordDetail', { recordId: item.id })}
             />
         ))}
 
