@@ -301,7 +301,7 @@ export const MainDashboard: React.FC = () => {
       activeTab={isAIMode ? 'chat' : 'home'}
       headerTitle=""
       showHeader={!isAIMode}
-      showTabs={!isAIMode}
+      showTabs={true}
       activeMode={mode}
       onModeChange={handleModeChange}
     >
@@ -387,7 +387,7 @@ export const MainDashboard: React.FC = () => {
           </ScrollView>
         </Animated.View>
 
-        {/* AI MODE LAYER (Full Screen) */}
+        {/* AI MODE LAYER */}
         <Animated.View
           style={[
             styles.chatLayer,
@@ -399,21 +399,33 @@ export const MainDashboard: React.FC = () => {
           ]}
           pointerEvents={isAIMode ? 'auto' : 'none'}
         >
-          {/* AI Mode Header */}
-          <View style={[styles.chatHeader, { backgroundColor: theme.colors.utility.primaryBackground, borderBottomColor: theme.colors.utility.secondaryText + '15' }]}>
-            <TouchableOpacity
-              style={[styles.backButton, { backgroundColor: theme.colors.utility.secondaryBackground }]}
-              onPress={handleSwitchMode}
-            >
-              <MaterialCommunityIcons name="arrow-left" size={22} color={theme.colors.utility.primaryText} />
-            </TouchableOpacity>
-            <View style={styles.headerTitleContainer}>
-              <MaterialCommunityIcons name="robot-happy" size={22} color={theme.colors.brand.primary} style={{ marginRight: 8 }} />
-              <Text style={[styles.headerTitle, { color: theme.colors.utility.primaryText }]}>
-                AI Assistant
-              </Text>
+          {/* AI Mode Header - Dashboard Style */}
+          <View style={[styles.aiHeader, { backgroundColor: theme.colors.utility.primaryBackground }]}>
+            <View style={styles.aiHeaderContent}>
+              {/* Left: Icon with glow effect */}
+              <View style={[styles.aiIconContainer, { backgroundColor: theme.colors.brand.primary + '15' }]}>
+                <View style={[styles.aiIconGlow, { backgroundColor: theme.colors.brand.primary + '30' }]} />
+                <MaterialCommunityIcons name="robot-happy" size={28} color={theme.colors.brand.primary} />
+              </View>
+
+              {/* Center: Greeting & Subtitle */}
+              <View style={styles.aiHeaderText}>
+                <Text style={[styles.aiGreeting, { color: theme.colors.utility.primaryText }]}>
+                  Hi Kamal
+                </Text>
+                <Text style={[styles.aiSubtitle, { color: theme.colors.utility.secondaryText }]}>
+                  How can I help you today?
+                </Text>
+              </View>
+
+              {/* Right: Close button */}
+              <TouchableOpacity
+                style={[styles.aiCloseButton, { backgroundColor: theme.colors.utility.secondaryBackground }]}
+                onPress={handleSwitchMode}
+              >
+                <MaterialCommunityIcons name="close" size={20} color={theme.colors.utility.secondaryText} />
+              </TouchableOpacity>
             </View>
-            <View style={styles.headerSpacer} />
           </View>
 
           {/* Chat Content - Takes remaining space */}
@@ -447,7 +459,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    bottom: 0, // Full screen - tab bar is hidden in AI mode
+    bottom: 65, // Above tab bar
   },
   scrollView: {
     flex: 1,
@@ -563,33 +575,52 @@ const styles = StyleSheet.create({
   collaboratorSection: {
     marginBottom: 30,
   },
-  chatHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+  // AI Mode Header Styles
+  aiHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitleContainer: {
-    flex: 1,
+  aiHeaderContent: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  aiIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     justifyContent: 'center',
-    marginLeft: -40, // Offset to center properly
+    alignItems: 'center',
+    position: 'relative',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+  aiIconGlow: {
+    position: 'absolute',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    opacity: 0.5,
   },
-  headerSpacer: {
-    width: 40, // Match backButton width for symmetry
+  aiHeaderText: {
+    flex: 1,
+    marginLeft: 14,
+  },
+  aiGreeting: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  aiSubtitle: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  aiCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   chatContent: {
     flex: 1,
