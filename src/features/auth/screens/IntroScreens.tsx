@@ -1,5 +1,5 @@
 // src/features/auth/screens/IntroScreens.tsx
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -7,8 +7,9 @@ import {
   StyleSheet,
   Animated,
   TouchableOpacity,
+  Easing,
 } from 'react-native';
-import { Text, Button } from '@rneui/themed';
+import { Text } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../../navigation/types';
@@ -24,11 +25,126 @@ interface Props {
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const INTRO_SHOWN_KEY = '@FamilyKnows:introShown';
 
+// Animated Feature Card
+const FeatureCard = ({ icon, text, delay, color }: { icon: string; text: string; delay: number; color: string }) => {
+  const translateY = useRef(new Animated.Value(30)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.9)).current;
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 500,
+        delay,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.spring(translateY, {
+        toValue: 0,
+        friction: 8,
+        tension: 40,
+        delay,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 5,
+        tension: 40,
+        delay,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        styles.featureCard,
+        {
+          backgroundColor: theme.colors.utility.secondaryBackground,
+          opacity,
+          transform: [{ translateY }, { scale }],
+        },
+      ]}
+    >
+      <View style={[styles.featureIconContainer, { backgroundColor: color + '15' }]}>
+        <Ionicons name={icon as any} size={22} color={color} />
+      </View>
+      <Text style={[styles.featureText, { color: theme.colors.utility.primaryText }]}>
+        {text}
+      </Text>
+    </Animated.View>
+  );
+};
+
+// Animated Category Bubble
+const CategoryBubble = ({ icon, label, color, delay, angle, radius }: any) => {
+  const scale = useRef(new Animated.Value(0)).current;
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 4,
+      tension: 40,
+      delay,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const x = radius * Math.cos(angle * Math.PI / 180);
+  const y = radius * Math.sin(angle * Math.PI / 180);
+
+  return (
+    <Animated.View
+      style={[
+        styles.categoryBubble,
+        {
+          backgroundColor: theme.colors.utility.secondaryBackground,
+          transform: [
+            { translateX: x },
+            { translateY: y },
+            { scale },
+          ],
+        },
+      ]}
+    >
+      <MaterialCommunityIcons name={icon} size={24} color={color} />
+      <Text style={[styles.categoryLabel, { color: theme.colors.utility.primaryText }]}>
+        {label}
+      </Text>
+    </Animated.View>
+  );
+};
+
 export const IntroScreens: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
+
+  // Page entrance animations
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const contentTranslateY = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.spring(contentTranslateY, {
+        toValue: 0,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handleSkip = async () => {
     await AsyncStorage.setItem(INTRO_SHOWN_KEY, 'true');
@@ -51,48 +167,30 @@ export const IntroScreens: React.FC<Props> = ({ navigation }) => {
       id: 1,
       title: "Your Family's Digital Vault",
       subtitle: "Why FamilyKnows?",
-      icon: (
-        <View style={styles.iconContainer}>
-          <MaterialCommunityIcons 
-            name="shield-home" 
-            size={120} 
-            color={theme.colors.brand.primary} 
-          />
-        </View>
-      ),
-      points: [
-        "One trusted place for everything that matters",
-        "AI-powered insights to protect & grow family wealth",
-        "Connect with verified service providers",
-        "Share knowledge across generations"
+      iconName: "shield-home",
+      features: [
+        { icon: "checkmark-circle", text: "One trusted place for everything" },
+        { icon: "sparkles", text: "AI-powered insights" },
+        { icon: "people", text: "Connect with verified providers" },
+        { icon: "heart", text: "Share across generations" },
       ],
     },
     {
       id: 2,
-      title: "Encrypted Data",
-      subtitle: "Your Security, Our Priority",
-      icon: (
-        <View style={styles.iconContainer}>
-          <MaterialCommunityIcons 
-            name="lock-check" 
-            size={120} 
-            color={theme.colors.brand.primary} 
-          />
-        </View>
-      ),
-      points: [
-        "End-to-end encryption for all your data",
-        "Your data never leaves your control",
-        "Offline-first with secure sync",
-        "PIN based access to App"
+      title: "Your Privacy, Our Priority",
+      subtitle: "Bank-Grade Security",
+      iconName: "lock-check",
+      features: [
+        { icon: "lock-closed", text: "End-to-end encryption" },
+        { icon: "shield-checkmark", text: "Your data stays yours" },
+        { icon: "cloud-offline", text: "Offline-first architecture" },
+        { icon: "key", text: "PIN protected access" },
       ],
     },
     {
       id: 3,
       title: "Everything Your Family Needs",
       subtitle: "Beyond Just Assets",
-      icon: null,
-      customContent: true,
       categories: [
         { icon: "home", label: "Property", color: '#FF6B6B' },
         { icon: "medical-bag", label: "Medical", color: '#4ECDC4' },
@@ -112,16 +210,16 @@ export const IntroScreens: React.FC<Props> = ({ navigation }) => {
           index * SCREEN_WIDTH,
           (index + 1) * SCREEN_WIDTH,
         ];
-        
+
         const dotWidth = scrollX.interpolate({
           inputRange,
-          outputRange: [8, 24, 8],
+          outputRange: [8, 28, 8],
           extrapolate: 'clamp',
         });
-        
-        const opacity = scrollX.interpolate({
+
+        const dotOpacity = scrollX.interpolate({
           inputRange,
-          outputRange: [0.3, 1, 0.3],
+          outputRange: [0.4, 1, 0.4],
           extrapolate: 'clamp',
         });
 
@@ -132,7 +230,7 @@ export const IntroScreens: React.FC<Props> = ({ navigation }) => {
               styles.paginationDot,
               {
                 width: dotWidth,
-                opacity,
+                opacity: dotOpacity,
                 backgroundColor: theme.colors.brand.primary,
               },
             ]}
@@ -142,10 +240,105 @@ export const IntroScreens: React.FC<Props> = ({ navigation }) => {
     </View>
   );
 
+  const renderScreen1or2 = (screen: any, index: number) => (
+    <View key={screen.id} style={styles.screen}>
+      <Animated.View
+        style={[
+          styles.screenContent,
+          {
+            opacity: contentOpacity,
+            transform: [{ translateY: contentTranslateY }],
+          },
+        ]}
+      >
+        {/* Icon Container */}
+        <View style={[styles.iconCircle, { backgroundColor: theme.colors.brand.primary + '15' }]}>
+          <MaterialCommunityIcons
+            name={screen.iconName}
+            size={80}
+            color={theme.colors.brand.primary}
+          />
+        </View>
+
+        {/* Text Content */}
+        <Text style={[styles.subtitle, { color: theme.colors.brand.primary }]}>
+          {screen.subtitle}
+        </Text>
+        <Text style={[styles.title, { color: theme.colors.utility.primaryText }]}>
+          {screen.title}
+        </Text>
+
+        {/* Feature Cards */}
+        <View style={styles.featuresContainer}>
+          {screen.features?.map((feature: any, idx: number) => (
+            <FeatureCard
+              key={idx}
+              icon={feature.icon}
+              text={feature.text}
+              delay={idx * 100}
+              color={theme.colors.brand.primary}
+            />
+          ))}
+        </View>
+      </Animated.View>
+    </View>
+  );
+
+  const renderScreen3 = (screen: any) => (
+    <View key={screen.id} style={styles.screen}>
+      <Animated.View
+        style={[
+          styles.screenContent,
+          {
+            opacity: contentOpacity,
+            transform: [{ translateY: contentTranslateY }],
+          },
+        ]}
+      >
+        {/* Text Content */}
+        <Text style={[styles.subtitle, { color: theme.colors.brand.primary }]}>
+          {screen.subtitle}
+        </Text>
+        <Text style={[styles.title, { color: theme.colors.utility.primaryText }]}>
+          {screen.title}
+        </Text>
+
+        {/* Wheel Layout */}
+        <View style={styles.wheelContainer}>
+          <View style={styles.wheelContent}>
+            {/* Central Hub */}
+            <View style={[styles.centralHub, { backgroundColor: theme.colors.brand.primary }]}>
+              <FontAwesome5 name="infinity" size={28} color="#FFF" />
+              <Text style={styles.hubText}>& More</Text>
+            </View>
+
+            {/* Category Bubbles */}
+            {screen.categories?.map((cat: any, idx: number) => (
+              <CategoryBubble
+                key={idx}
+                icon={cat.icon}
+                label={cat.label}
+                color={cat.color}
+                delay={idx * 80}
+                angle={(idx * 60) - 90}
+                radius={95}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* Bottom Text */}
+        <Text style={[styles.bottomText, { color: theme.colors.utility.secondaryText }]}>
+          Store anything that matters to your family
+        </Text>
+      </Animated.View>
+    </View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.utility.primaryBackground }]}>
       {/* Skip Button */}
-      <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+      <TouchableOpacity style={styles.skipButton} onPress={handleSkip} activeOpacity={0.7}>
         <Text style={[styles.skipText, { color: theme.colors.utility.secondaryText }]}>
           Skip
         </Text>
@@ -167,130 +360,31 @@ export const IntroScreens: React.FC<Props> = ({ navigation }) => {
         }}
         scrollEventThrottle={16}
       >
-        {screens.map((screen) => (
-          <View key={screen.id} style={styles.screen}>
-            <View style={styles.content}>
-              {screen.icon}
-              
-              <Text style={[styles.subtitle, { color: theme.colors.brand.primary }]}>
-                {screen.subtitle}
-              </Text>
-              
-              <Text style={[styles.title, { color: theme.colors.utility.primaryText }]}>
-                {screen.title}
-              </Text>
-
-              {screen.points && (
-                <View style={styles.pointsContainer}>
-                  {screen.points.map((point, index) => (
-                    <View key={index} style={styles.pointRow}>
-                      <Ionicons 
-                        name="checkmark-circle" 
-                        size={24} 
-                        color={theme.colors.brand.tertiary} 
-                      />
-                      <Text style={[styles.pointText, { color: theme.colors.utility.primaryText }]}>
-                        {point}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              {screen.categories && screen.customContent && (
-                <View style={styles.wheelContainer}>
-                  <View style={styles.wheelContent}>
-                    {/* Spokes */}
-                    {screen.categories.map((_, index) => {
-                      const angle = (index * 60); // 6 items, 60 degrees apart
-                      return (
-                        <View
-                          key={`spoke-${index}`}
-                          style={[
-                            styles.spokeContainer,
-                            {
-                              transform: [
-                                { rotate: `${angle}deg` },
-                              ],
-                            },
-                          ]}
-                        >
-                          <View style={[styles.spoke, { backgroundColor: theme.colors.utility.secondaryText + '30' }]} />
-                        </View>
-                      );
-                    })}
-
-                    {/* Central hub */}
-                    <View style={[styles.centralHub, { backgroundColor: theme.colors.brand.primary }]}>
-                      <FontAwesome5 
-                        name="infinity" 
-                        size={32} 
-                        color={theme.colors.utility.secondaryBackground} 
-                      />
-                      <Text style={[styles.hubText, { color: theme.colors.utility.secondaryBackground }]}>
-                        & More
-                      </Text>
-                    </View>
-                    
-                    {/* Wheel items */}
-                    {screen.categories.map((category, index) => {
-                      const angle = (index * 60) - 90; // Start from top
-                      const radius = 100;
-                      const x = radius * Math.cos(angle * Math.PI / 180);
-                      const y = radius * Math.sin(angle * Math.PI / 180);
-                      
-                      return (
-                        <View
-                          key={index}
-                          style={[
-                            styles.wheelItemContainer,
-                            {
-                              transform: [
-                                { translateX: x },
-                                { translateY: y },
-                              ],
-                            },
-                          ]}
-                        >
-                          <View style={[styles.wheelItem, { backgroundColor: theme.colors.utility.secondaryBackground }]}>
-                            <MaterialCommunityIcons
-                              name={category.icon as any}
-                              size={28}
-                              color={category.color}
-                            />
-                            <Text style={[styles.wheelItemText, { color: theme.colors.utility.primaryText }]}>
-                              {category.label}
-                            </Text>
-                          </View>
-                        </View>
-                      );
-                    })}
-                  </View>
-                  
-                  {/* Bottom text */}
-                  <Text style={[styles.wheelBottomText, { color: theme.colors.utility.secondaryText }]}>
-                    Store anything that matters to your family
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-        ))}
+        {screens.map((screen, index) =>
+          index < 2 ? renderScreen1or2(screen, index) : renderScreen3(screen)
+        )}
       </ScrollView>
 
       {/* Bottom Section */}
-      <View style={styles.bottomSection}>
+      <View style={[styles.bottomSection, { backgroundColor: theme.colors.utility.primaryBackground }]}>
         {renderPagination()}
-        
-        <Button
-          title={currentPage === 2 ? "Get Started" : "Next"}
+
+        {/* Next/Get Started Button */}
+        <TouchableOpacity
+          style={[styles.nextButton, { backgroundColor: theme.colors.brand.primary }]}
           onPress={handleNext}
-          buttonStyle={[
-            styles.nextButton,
-            { backgroundColor: theme.colors.brand.primary }
-          ]}
-          titleStyle={styles.nextButtonText}
-        />
+          activeOpacity={0.8}
+        >
+          <Text style={styles.nextButtonText}>
+            {currentPage === 2 ? "Get Started" : "Next"}
+          </Text>
+          <MaterialCommunityIcons
+            name={currentPage === 2 ? "check" : "arrow-right"}
+            size={22}
+            color="#FFF"
+            style={styles.nextButtonIcon}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -302,10 +396,11 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     position: 'absolute',
-    top: 50,
-    right: 20,
+    top: 55,
+    right: 24,
     zIndex: 10,
-    padding: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   skipText: {
     fontSize: 16,
@@ -315,131 +410,132 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     flex: 1,
   },
-  content: {
+  screenContent: {
     flex: 1,
     paddingTop: 100,
-    paddingHorizontal: 30,
+    paddingHorizontal: 24,
     alignItems: 'center',
   },
-  iconContainer: {
-    marginBottom: 40,
-    alignItems: 'center',
+  iconCircle: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 32,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    marginBottom: 10,
-    textAlign: 'center',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 8,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 32,
+    letterSpacing: -0.5,
+    lineHeight: 36,
   },
-  pointsContainer: {
+  featuresContainer: {
     width: '100%',
-    marginTop: 20,
+    gap: 12,
   },
-  pointRow: {
+  featureCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  pointText: {
+  featureIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  featureText: {
     fontSize: 16,
-    marginLeft: 12,
+    fontWeight: '500',
     flex: 1,
-    lineHeight: 22,
   },
   wheelContainer: {
-    width: SCREEN_WIDTH - 60,
-    height: 300,
+    width: SCREEN_WIDTH - 48,
+    height: 280,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 20,
   },
   wheelContent: {
-    width: 260,
-    height: 260,
+    width: 250,
+    height: 250,
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
   },
   centralHub: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    zIndex: 10,
-  },
-  hubText: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  spokeContainer: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  spoke: {
-    position: 'absolute',
-    width: 100,
-    height: 1,
-  },
-  wheelItemContainer: {
-    position: 'absolute',
-    width: 70,
-    height: 70,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  wheelItem: {
     width: 70,
     height: 70,
     borderRadius: 35,
+    position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 3,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    zIndex: 10,
+  },
+  hubText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FFF',
+    marginTop: 2,
+  },
+  categoryBubble: {
+    position: 'absolute',
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
   },
-  wheelItemText: {
-    fontSize: 10,
-    fontWeight: '500',
+  categoryLabel: {
+    fontSize: 9,
+    fontWeight: '600',
     marginTop: 4,
-    textAlign: 'center',
   },
-  wheelBottomText: {
-    fontSize: 14,
+  bottomText: {
+    fontSize: 15,
     fontStyle: 'italic',
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: 24,
     paddingHorizontal: 20,
   },
   bottomSection: {
-    paddingHorizontal: 30,
+    paddingHorizontal: 24,
     paddingBottom: 40,
-    paddingTop: 20,
+    paddingTop: 16,
   },
   pagination: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 24,
   },
   paginationDot: {
     height: 8,
@@ -447,11 +543,23 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   nextButton: {
-    borderRadius: 25,
-    paddingVertical: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+    borderRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
   nextButtonText: {
     fontSize: 18,
     fontWeight: '600',
+    color: '#FFF',
+  },
+  nextButtonIcon: {
+    marginLeft: 8,
   },
 });
