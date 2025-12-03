@@ -140,7 +140,7 @@ export const MainDashboard: React.FC = () => {
     }
   };
 
-  // Mode change handler - works with both toggle and direct mode setting
+  // Mode change handler - Clean full-screen transition
   const handleModeChange = useCallback((newMode: 'keyboard' | 'chat') => {
     if (newMode === mode) return; // Already in this mode
 
@@ -148,52 +148,41 @@ export const MainDashboard: React.FC = () => {
     AsyncStorage.setItem(MODE_KEY, newMode).catch(console.error);
 
     if (newMode === 'chat') {
-      // Transition TO Chat
+      // Transition TO AI Mode - Full screen takeover
       setMode('chat');
       Animated.parallel([
-        Animated.timing(dashboardScale, {
-          toValue: 0.92,
-          duration: 400,
-          useNativeDriver: true,
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-        }),
         Animated.timing(dashboardOpacity, {
-          toValue: 0.6,
-          duration: 400,
+          toValue: 0,
+          duration: 200,
           useNativeDriver: true,
         }),
-        Animated.spring(chatTranslateY, {
+        Animated.timing(chatTranslateY, {
           toValue: 0,
-          friction: 7,
-          tension: 40,
+          duration: 300,
           useNativeDriver: true,
+          easing: Easing.out(Easing.cubic),
         }),
       ]).start();
     } else {
       // Transition TO Dashboard (keyboard mode)
       Animated.parallel([
-        Animated.timing(dashboardScale, {
-          toValue: 1,
-          duration: 300,
+        Animated.timing(chatTranslateY, {
+          toValue: SCREEN_HEIGHT,
+          duration: 250,
           useNativeDriver: true,
-          easing: Easing.out(Easing.cubic),
+          easing: Easing.in(Easing.cubic),
         }),
         Animated.timing(dashboardOpacity, {
           toValue: 1,
           duration: 300,
+          delay: 100,
           useNativeDriver: true,
-        }),
-        Animated.timing(chatTranslateY, {
-          toValue: SCREEN_HEIGHT,
-          duration: 350,
-          useNativeDriver: true,
-          easing: Easing.inOut(Easing.cubic),
         }),
       ]).start(({ finished }) => {
         if (finished) setMode('keyboard');
       });
     }
-  }, [mode, dashboardScale, dashboardOpacity, chatTranslateY]);
+  }, [mode, dashboardOpacity, chatTranslateY]);
 
   // Toggle handler for AssistantCard
   const handleSwitchMode = useCallback(() => {
@@ -400,7 +389,7 @@ export const MainDashboard: React.FC = () => {
           </ScrollView>
         </Animated.View>
 
-        {/* CHAT LAYER (Overlay) */}
+        {/* AI MODE LAYER (Full Screen) */}
         <Animated.View
           style={[
             styles.chatLayer,
@@ -412,15 +401,21 @@ export const MainDashboard: React.FC = () => {
             }
           ]}
         >
-          {/* Header with Close Button */}
-          <View style={[styles.chatHeader, { backgroundColor: theme.colors.utility.primaryBackground }]}>
-            <View style={[styles.chatHandle, { backgroundColor: theme.colors.utility.secondaryText + '40' }]} />
+          {/* AI Mode Header */}
+          <View style={[styles.chatHeader, { backgroundColor: theme.colors.utility.primaryBackground, borderBottomColor: theme.colors.utility.secondaryText + '15' }]}>
             <TouchableOpacity
-              style={[styles.closeChatButton, { backgroundColor: theme.colors.utility.secondaryBackground }]}
+              style={[styles.backButton, { backgroundColor: theme.colors.utility.secondaryBackground }]}
               onPress={handleSwitchMode}
             >
-              <MaterialCommunityIcons name="chevron-down" size={24} color={theme.colors.utility.primaryText} />
+              <MaterialCommunityIcons name="arrow-left" size={22} color={theme.colors.utility.primaryText} />
             </TouchableOpacity>
+            <View style={styles.headerTitleContainer}>
+              <MaterialCommunityIcons name="robot-happy" size={22} color={theme.colors.brand.primary} style={{ marginRight: 8 }} />
+              <Text style={[styles.headerTitle, { color: theme.colors.utility.primaryText }]}>
+                AI Assistant
+              </Text>
+            </View>
+            <View style={styles.headerSpacer} />
           </View>
 
           {/* Chat Content - Takes remaining space */}
@@ -455,13 +450,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 80, // Leave space for bottom tab bar
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 20,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
   },
   scrollView: {
     flex: 1,
@@ -580,32 +568,32 @@ const styles = StyleSheet.create({
   chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
   },
-  chatHandle: {
+  backButton: {
     width: 40,
-    height: 4,
-    borderRadius: 2,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitleContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: -40, // Offset to center properly
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  headerSpacer: {
+    width: 40, // Match backButton width for symmetry
   },
   chatContent: {
     flex: 1,
-  },
-  closeChatButton: {
-    position: 'absolute',
-    right: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
 });
