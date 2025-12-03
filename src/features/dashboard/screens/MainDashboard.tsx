@@ -408,25 +408,25 @@ export const MainDashboard: React.FC = () => {
               transform: [{ translateY: chatTranslateY }],
               backgroundColor: theme.colors.utility.primaryBackground,
               zIndex: 100,
+              paddingTop: insets.top,
             }
           ]}
         >
-          {/* Custom Handle for Dragging (Visual Only) */}
-          <View style={[styles.chatHandleContainer, { backgroundColor: theme.colors.utility.primaryBackground }]}>
-             <View style={[styles.chatHandle, { backgroundColor: theme.colors.utility.secondaryText + '40' }]} />
+          {/* Header with Close Button */}
+          <View style={[styles.chatHeader, { backgroundColor: theme.colors.utility.primaryBackground }]}>
+            <View style={[styles.chatHandle, { backgroundColor: theme.colors.utility.secondaryText + '40' }]} />
+            <TouchableOpacity
+              style={[styles.closeChatButton, { backgroundColor: theme.colors.utility.secondaryBackground }]}
+              onPress={handleSwitchMode}
+            >
+              <MaterialCommunityIcons name="chevron-down" size={24} color={theme.colors.utility.primaryText} />
+            </TouchableOpacity>
           </View>
 
-          <View style={{ flex: 1 }}>
+          {/* Chat Content - Takes remaining space */}
+          <View style={styles.chatContent}>
             <ChatModeContent userName="Kamal" />
           </View>
-
-          {/* Close Button for Chat */}
-          <TouchableOpacity
-            style={[styles.closeChatButton, { backgroundColor: theme.colors.utility.secondaryBackground }]}
-            onPress={handleSwitchMode}
-          >
-            <MaterialCommunityIcons name="chevron-down" size={28} color={theme.colors.utility.primaryText} />
-          </TouchableOpacity>
         </Animated.View>
 
         {/* Quick Action Card Modal */}
@@ -454,13 +454,14 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
-    height: SCREEN_HEIGHT,
+    bottom: 80, // Leave space for bottom tab bar
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 20,
     elevation: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
   },
   scrollView: {
     flex: 1,
@@ -576,29 +577,35 @@ const styles = StyleSheet.create({
   collaboratorSection: {
     marginBottom: 30,
   },
-  chatHandleContainer: {
-    height: 30,
-    width: '100%',
+  chatHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
   },
   chatHandle: {
     width: 40,
     height: 4,
     borderRadius: 2,
   },
+  chatContent: {
+    flex: 1,
+  },
   closeChatButton: {
     position: 'absolute',
-    top: 50,
-    right: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 101,
-    elevation: 5,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
 });
