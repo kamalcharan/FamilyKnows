@@ -16,6 +16,7 @@ import { useTheme } from '../../../theme/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MainLayout } from '../../../components/layout/MainLayout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { AssistantCard } from '../components/AssistantCard';
 import { CollaboratorsCard } from '../components/CollaboratorsCard';
 import { ChatModeContent } from '../../chat';
@@ -67,6 +68,7 @@ const AnimatedCard = ({ children, onPress, style }: any) => {
 export const MainDashboard: React.FC = () => {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
 
   // State
   const [mode, setMode] = useState<'keyboard' | 'chat'>('keyboard');
@@ -188,9 +190,13 @@ export const MainDashboard: React.FC = () => {
 
   const handleCardPress = (screenId: string) => {
     trackScreenAccess(screenId);
-    if (screenId === 'collaborators') {
+
+    if (screenId === 'assets') {
+      navigation.navigate('AssetsHub');
+    } else if (screenId === 'collaborators') {
       setActiveScreen('collaborators');
     }
+    // Add other screen navigations here
   };
 
   // Dashboard Cards Configuration

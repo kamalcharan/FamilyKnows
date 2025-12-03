@@ -12,8 +12,13 @@ import { GoogleDriveConnectScreen } from '../features/onboarding/screens/GoogleD
 import { FamilySetupScreen } from '../features/onboarding/screens/FamilySetupScreen';
 import { PricingScreen } from '../features/onboarding/screens/PricingScreen';
 
+// Feature screens
+import { AssetsHubScreen } from '../features/assets';
+
 export type MainStackParamList = {
   Dashboard: undefined;
+  // Feature screens
+  AssetsHub: undefined;
   // Settings screens
   SettingsProfile: { isFromSettings: boolean };
   SettingsPhone: { isFromSettings: boolean };
@@ -35,7 +40,14 @@ export const MainNavigator: React.FC = () => {
       }}
     >
       <Stack.Screen name="Dashboard" component={MainDashboard} />
-      
+
+      {/* Feature Screens */}
+      <Stack.Screen
+        name="AssetsHub"
+        component={AssetsHubScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+
       {/* Settings Screens */}
       <Stack.Screen 
         name="SettingsProfile" 
