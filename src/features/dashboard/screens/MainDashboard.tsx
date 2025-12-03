@@ -379,13 +379,13 @@ export const MainDashboard: React.FC = () => {
                 </ScrollView>
               </View>
 
-              {/* Main Grid */}
+              {/* Main Grid - All Feature Cards */}
               <View style={styles.gridSection}>
                 <Text style={[styles.sectionTitle, { color: theme.colors.utility.primaryText }]}>
                   Overview
                 </Text>
                 <View style={styles.cardsGrid}>
-                  {getDisplayCards().map((card) => renderDashboardCard(card))}
+                  {dashboardCards.map((card) => renderDashboardCard(card))}
                 </View>
               </View>
 
