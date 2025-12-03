@@ -80,7 +80,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
   const getModeIcon = (mode: InteractionMode) => {
     switch (mode) {
       case 'chat':
-        return 'message-text';
+        return 'robot-happy'; // AI Mode icon
       case 'keyboard':
         return 'keyboard';
     }

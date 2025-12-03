@@ -1,4 +1,5 @@
 // src/features/chat/components/ChatModeContent.tsx
+// AI Mode Content - Interactive assistant with intent-based navigation
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -9,6 +10,7 @@ import {
   TextInput,
   Platform,
   KeyboardAvoidingView,
+  Easing,
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -23,7 +25,7 @@ interface ChatModeContentProps {
 
 // Wrapper for animating individual messages
 const AnimatedMessage = ({ children }: { children: React.ReactNode }) => {
-  const slideAnim = useRef(new Animated.Value(50)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -31,7 +33,7 @@ const AnimatedMessage = ({ children }: { children: React.ReactNode }) => {
       Animated.spring(slideAnim, {
         toValue: 0,
         tension: 50,
-        friction: 7,
+        friction: 8,
         useNativeDriver: true,
       }),
       Animated.timing(fadeAnim, {
@@ -47,7 +49,7 @@ const AnimatedMessage = ({ children }: { children: React.ReactNode }) => {
       style={{
         opacity: fadeAnim,
         transform: [{ translateY: slideAnim }],
-        marginBottom: 16,
+        marginBottom: 12,
       }}
     >
       {children}
@@ -63,30 +65,46 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
   const [intentHistory, setIntentHistory] = useState<ChatIntent[][]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [panelReady, setPanelReady] = useState(false);
 
   // Animation for the Bottom Panel (Intents + Input)
-  const panelSlide = useRef(new Animated.Value(100)).current;
+  const panelOpacity = useRef(new Animated.Value(0)).current;
+  const panelTranslateY = useRef(new Animated.Value(50)).current;
 
   useEffect(() => {
     // Initial greeting with delay for effect
     const greeting = assistantResponses.greeting.replace('{name}', userName);
-    setTimeout(() => {
-      addAssistantMessage(greeting, mainIntents);
 
-      // Slide in the bottom panel
-      Animated.spring(panelSlide, {
-        toValue: 0,
-        friction: 8,
-        useNativeDriver: true,
-      }).start();
-    }, 500);
+    const timer = setTimeout(() => {
+      addAssistantMessage(greeting, mainIntents);
+      setPanelReady(true);
+
+      // Animate panel in
+      Animated.parallel([
+        Animated.timing(panelOpacity, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(panelTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
+    return () => clearTimeout(timer);
   }, [messages]);
 
   const addAssistantMessage = (text: string, intents?: ChatIntent[]) => {
@@ -136,7 +154,7 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
 
         // Return to main menu after action
         setTimeout(() => {
-          addAssistantMessage("Is there anything else?", mainIntents);
+          addAssistantMessage("Is there anything else I can help with?", mainIntents);
           setIntentHistory([]);
         }, 1500);
       }, 600);
@@ -151,7 +169,7 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
       setIsTyping(true);
       setTimeout(() => {
         setIsTyping(false);
-        addAssistantMessage("I'm processing that request. (AI Integration Coming Soon)");
+        addAssistantMessage("I'm processing that request. AI integration coming soon!");
       }, 800);
     }
   };
@@ -165,10 +183,16 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
     }
   };
 
+  // Helper to check if icon is an emoji
+  const isEmoji = (str: string) => {
+    return /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(str);
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       {/* Message Stream */}
       <ScrollView
@@ -176,6 +200,7 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
         style={styles.messagesContainer}
         contentContainerStyle={styles.messagesContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.spacer} />
         {messages.map((message) => (
@@ -195,6 +220,7 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
             />
           </AnimatedMessage>
         )}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
 
       {/* "Glass" Command Panel */}
@@ -202,8 +228,9 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
         style={[
           styles.commandPanel,
           {
-            backgroundColor: theme.colors.utility.secondaryBackground + 'F2',
-            transform: [{ translateY: panelSlide }]
+            backgroundColor: theme.colors.utility.secondaryBackground + 'F5',
+            opacity: panelOpacity,
+            transform: [{ translateY: panelTranslateY }],
           }
         ]}
       >
@@ -213,13 +240,23 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chipsContent}
+            keyboardShouldPersistTaps="handled"
           >
             {intentHistory.length > 0 && (
               <TouchableOpacity
-                style={[styles.chip, styles.backChip, { borderColor: theme.colors.utility.secondaryText + '40' }]}
+                style={[
+                  styles.chip,
+                  styles.backChip,
+                  { borderColor: theme.colors.utility.secondaryText + '40' }
+                ]}
                 onPress={handleBackIntent}
+                activeOpacity={0.7}
               >
-                <MaterialCommunityIcons name="arrow-left" size={16} color={theme.colors.utility.secondaryText} />
+                <MaterialCommunityIcons
+                  name="arrow-left"
+                  size={18}
+                  color={theme.colors.utility.secondaryText}
+                />
               </TouchableOpacity>
             )}
 
@@ -229,19 +266,23 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
                 style={[
                   styles.chip,
                   {
-                    backgroundColor: theme.colors.brand.primary + '10',
+                    backgroundColor: theme.colors.brand.primary + '15',
                     borderColor: theme.colors.brand.primary + '30',
                   }
                 ]}
                 activeOpacity={0.7}
                 onPress={() => handleIntentPress(intent)}
               >
-                <MaterialCommunityIcons
-                  name={(intent.icon as any) || "star-four-points"}
-                  size={16}
-                  color={theme.colors.brand.primary}
-                  style={{ marginRight: 6 }}
-                />
+                {intent.icon && isEmoji(intent.icon) ? (
+                  <Text style={styles.chipIcon}>{intent.icon}</Text>
+                ) : (
+                  <MaterialCommunityIcons
+                    name="star-four-points"
+                    size={16}
+                    color={theme.colors.brand.primary}
+                    style={{ marginRight: 6 }}
+                  />
+                )}
                 <Text style={[styles.chipText, { color: theme.colors.brand.primary }]}>
                   {intent.label}
                 </Text>
@@ -251,10 +292,18 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
         </View>
 
         {/* Input Field */}
-        <View style={[styles.inputContainer, { borderColor: theme.colors.utility.secondaryText + '20' }]}>
+        <View
+          style={[
+            styles.inputContainer,
+            {
+              borderColor: theme.colors.utility.secondaryText + '20',
+              backgroundColor: theme.colors.utility.primaryBackground,
+            }
+          ]}
+        >
           <TextInput
             style={[styles.input, { color: theme.colors.utility.primaryText }]}
-            placeholder="Ask FamilyKnows..."
+            placeholder="Ask anything..."
             placeholderTextColor={theme.colors.utility.secondaryText + '80'}
             value={inputText}
             onChangeText={setInputText}
@@ -264,12 +313,21 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
           <TouchableOpacity
             style={[
               styles.sendButton,
-              { backgroundColor: inputText.trim() ? theme.colors.brand.primary : theme.colors.utility.secondaryText + '20' }
+              {
+                backgroundColor: inputText.trim()
+                  ? theme.colors.brand.primary
+                  : theme.colors.utility.secondaryText + '30'
+              }
             ]}
             onPress={handleSend}
             disabled={!inputText.trim()}
+            activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name="arrow-up" size={20} color="#FFF" />
+            <MaterialCommunityIcons
+              name="send"
+              size={18}
+              color={inputText.trim() ? '#FFF' : theme.colors.utility.secondaryText}
+            />
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -283,41 +341,43 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   spacer: {
+    height: 16,
+  },
+  bottomSpacer: {
     height: 20,
   },
   messagesContainer: {
     flex: 1,
   },
   messagesContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
   },
   commandPanel: {
-    paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 10,
-    borderTopWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
   },
   chipsContainer: {
-    marginBottom: 16,
-    height: 40,
+    marginBottom: 12,
+    minHeight: 44,
   },
   chipsContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 22,
     marginRight: 8,
     borderWidth: 1,
   },
@@ -326,6 +386,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 1,
   },
+  chipIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
   chipText: {
     fontSize: 14,
     fontWeight: '600',
@@ -333,23 +397,22 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
+    marginHorizontal: 16,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 30,
+    paddingVertical: 6,
+    borderRadius: 28,
     borderWidth: 1,
-    backgroundColor: '#F9FAFB',
   },
   input: {
     flex: 1,
     fontSize: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     marginRight: 8,
   },
   sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
   },
