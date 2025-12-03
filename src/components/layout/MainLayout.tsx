@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppHeader } from '../navigation/AppHeader';
-import { BottomTabBar, TabRoute } from '../navigation/BottomTabBar';
+import { BottomTabBar, TabRoute, InteractionMode } from '../navigation/BottomTabBar';
 import { MenuDrawer } from '../navigation/MenuDrawer';
 import { useNavigation } from '@react-navigation/native';
 
@@ -18,6 +18,8 @@ interface MainLayoutProps {
   headerTitle?: string;
   showBack?: boolean;
   onBackPress?: () => void;
+  activeMode?: InteractionMode;
+  onModeChange?: (mode: InteractionMode) => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
@@ -28,6 +30,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   headerTitle,
   showBack = false,
   onBackPress,
+  activeMode,
+  onModeChange,
 }) => {
   const { theme } = useTheme();
   const navigation = useNavigation();
@@ -71,6 +75,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         <BottomTabBar
           activeTab={activeTab}
           onTabPress={handleTabPress}
+          activeMode={activeMode}
+          onModeChange={onModeChange}
         />
       )}
 

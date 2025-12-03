@@ -18,16 +18,23 @@ export type InteractionMode = 'chat' | 'keyboard'; // voice hidden for now
 interface BottomTabBarProps {
   activeTab: TabRoute;
   onTabPress: (route: TabRoute) => void;
+  activeMode?: InteractionMode;
+  onModeChange?: (mode: InteractionMode) => void;
 }
 
 export const BottomTabBar: React.FC<BottomTabBarProps> = ({
   activeTab,
   onTabPress,
+  activeMode: propActiveMode,
+  onModeChange,
 }) => {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [showActions, setShowActions] = useState(false);
-  const [activeMode, setActiveMode] = useState<InteractionMode>('keyboard'); // Local state for mode
+  const [localMode, setLocalMode] = useState<InteractionMode>('keyboard');
+
+  // Use prop if provided, otherwise fall back to local state
+  const activeMode = propActiveMode ?? localMode;
 
   // Animation values
   const plusRotation = useRef(new Animated.Value(0)).current;
@@ -62,9 +69,12 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
   }, [showActions, plusRotation]);
 
   const handleModeChange = (mode: InteractionMode) => {
-    setActiveMode(mode);
+    if (onModeChange) {
+      onModeChange(mode);
+    } else {
+      setLocalMode(mode);
+    }
     console.log('Interaction mode changed to:', mode);
-    // Handle mode change - activate chat, voice, or keyboard input
   };
 
   const getModeIcon = (mode: InteractionMode) => {

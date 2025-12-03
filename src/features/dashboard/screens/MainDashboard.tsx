@@ -201,7 +201,12 @@ export const MainDashboard: React.FC = () => {
   }
 
   return (
-    <MainLayout activeTab={mode === 'chat' ? 'chat' : 'home'} headerTitle="FamilyKnows">
+    <MainLayout
+      activeTab={mode === 'chat' ? 'chat' : 'home'}
+      headerTitle="FamilyKnows"
+      activeMode={mode}
+      onModeChange={saveMode}
+    >
       {mode === 'chat' ? (
         <ChatModeContent userName="User" />
       ) : (
