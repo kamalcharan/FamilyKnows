@@ -1,5 +1,5 @@
 // src/features/onboarding/screens/ThemeSelectionScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Switch,
   Dimensions,
+  Animated,
+  Easing,
 } from 'react-native';
 import { Text, Button } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -37,6 +39,36 @@ export const ThemeSelectionScreen: React.FC<Props> = ({ navigation, route }) => 
   const { theme, setTheme, isDarkMode, toggleDarkMode, availableThemes, currentThemeId } = useTheme();
   const { isFromSettings } = route.params;
   const [selectedThemeId, setSelectedThemeId] = useState(currentThemeId);
+
+  // Entrance animations
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(30)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 500,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(headerTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handleContinue = () => {
     // Apply the selected theme

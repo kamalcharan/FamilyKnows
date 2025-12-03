@@ -1,11 +1,13 @@
 // src/features/onboarding/screens/PricingScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  Animated,
+  Easing,
 } from 'react-native';
 import { Text, Button } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -40,9 +42,95 @@ interface PlanFeature {
   limit?: string;
 }
 
+// Animated Plan Card Component
+const AnimatedPlanCard = ({ children, delay, onPress, isSelected, style }: any) => {
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const pressScale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        delay,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 400,
+        delay,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const handlePressIn = () => {
+    Animated.spring(pressScale, {
+      toValue: 0.97,
+      useNativeDriver: true,
+      speed: 20,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(pressScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 20,
+      bounciness: 4,
+    }).start();
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={1}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Animated.View
+        style={[
+          style,
+          {
+            opacity: opacityAnim,
+            transform: [{ scale: Animated.multiply(scaleAnim, pressScale) }],
+          },
+        ]}
+      >
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
+
 export const PricingScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
-  const [selectedPlan, setSelectedPlan] = useState<PlanType>('family'); // Default to family plan
+  const [selectedPlan, setSelectedPlan] = useState<PlanType>('family');
+
+  // Entrance animations
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(headerOpacity, {
+        toValue: 1,
+        duration: 500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.spring(headerTranslateY, {
+        toValue: 0,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const freePlanFeatures: PlanFeature[] = [
     { feature: 'Personal Asset Management', included: true, limit: 'Up to 8 assets' },
@@ -177,11 +265,19 @@ export const PricingScreen: React.FC<Props> = ({ navigation }) => {
     <View style={[styles.container, { backgroundColor: theme.colors.utility.primaryBackground }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View style={styles.header}>
-          <MaterialCommunityIcons 
-            name="crown" 
-            size={60} 
-            color={theme.colors.brand.primary} 
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            }
+          ]}
+        >
+          <MaterialCommunityIcons
+            name="crown"
+            size={60}
+            color={theme.colors.brand.primary}
           />
           <Text style={[styles.title, { color: theme.colors.utility.primaryText }]}>
             Choose Your Plan
@@ -189,7 +285,7 @@ export const PricingScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={[styles.subtitle, { color: theme.colors.utility.secondaryText }]}>
             Start with a 14-day free trial. No credit card required.
           </Text>
-        </View>
+        </Animated.View>
 
         {/* Plans */}
         <View style={styles.plansContainer}>

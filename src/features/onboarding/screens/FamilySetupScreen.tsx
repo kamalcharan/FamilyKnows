@@ -1,5 +1,5 @@
 // src/features/onboarding/screens/FamilySetupScreen.tsx (Fixed version)
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,6 +9,8 @@ import {
   Alert,
   Modal,
   FlatList,
+  Animated,
+  Easing,
 } from 'react-native';
 import { Text, Input, Button, Avatar, Divider } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -78,6 +80,36 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
   const [familyName, setFamilyName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
+
+  // Entrance animations
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(30)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 500,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(headerTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
   const [inviteRole, setInviteRole] = useState<UserRole>('viewer');
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});

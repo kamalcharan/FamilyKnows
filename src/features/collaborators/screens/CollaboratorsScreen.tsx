@@ -1,5 +1,5 @@
 // src/features/collaborators/screens/CollaboratorsScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   Alert,
   ActionSheetIOS,
   Platform,
+  Animated,
+  Easing,
 } from 'react-native';
 import { useTheme } from '../../../theme/ThemeContext';
 import { useWorkspace } from '../../../contexts/WorkspaceContext';
@@ -31,6 +33,45 @@ export const CollaboratorsScreen: React.FC = () => {
   const [showContactsModal, setShowContactsModal] = useState(false);
   const [showProviderForm, setShowProviderForm] = useState(false);
   const [formInitialData, setFormInitialData] = useState<Partial<ServiceProvider> | undefined>();
+
+  // Entrance animations
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(-20)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const contentTranslateY = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(headerTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(contentOpacity, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(contentTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
 
   const filteredProviders =
     selectedCategory === 'all'
