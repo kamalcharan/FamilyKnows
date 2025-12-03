@@ -5,10 +5,11 @@ export type AuthStackParamList = {
   // Auth screens
   Splash: undefined;
   Intro: undefined;
-  Login: undefined;
-  
+  StoryOnboarding: undefined;
+  Login: { userName?: string; familyName?: string };
+
   // Onboarding screens (in order)
-  PhoneAuth: { isFromSettings?: boolean };
+  PhoneAuth: { isFromSettings?: boolean; userName?: string; familyName?: string };
   UserProfile: { isFromSettings: boolean };
   ThemeSelection: { isFromSettings: boolean };
   LanguageSelection: { isFromSettings: boolean };

@@ -148,7 +148,7 @@ export const IntroScreens: React.FC<Props> = ({ navigation }) => {
 
   const handleSkip = async () => {
     await AsyncStorage.setItem(INTRO_SHOWN_KEY, 'true');
-    navigation.replace('Login');
+    navigation.replace('StoryOnboarding');
   };
 
   const handleNext = () => {

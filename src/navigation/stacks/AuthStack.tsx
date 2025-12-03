@@ -9,6 +9,7 @@ import { IntroScreens } from '../../features/auth/screens/IntroScreens';
 import { LoginScreen } from '../../features/auth/screens/LoginScreen';
 
 // Onboarding screens
+import { StoryOnboardingScreen } from '../../features/onboarding/screens/StoryOnboardingScreen';
 import { PhoneAuthScreen } from '../../features/onboarding/screens/PhoneAuthScreen';
 import { UserProfileScreen } from '../../features/onboarding/screens/UserProfileScreen';
 import { ThemeSelectionScreen } from '../../features/onboarding/screens/ThemeSelectionScreen';
@@ -32,15 +33,22 @@ export const AuthStack: React.FC = () => {
     >
       {/* Auth Flow */}
       <Stack.Screen name="Splash" component={SplashScreen} />
-      <Stack.Screen 
-        name="Intro" 
+      <Stack.Screen
+        name="Intro"
         component={IntroScreens}
         options={{
           animation: 'slide_from_right',
         }}
       />
-      <Stack.Screen 
-        name="Login" 
+      <Stack.Screen
+        name="StoryOnboarding"
+        component={StoryOnboardingScreen}
+        options={{
+          animation: 'fade',
+        }}
+      />
+      <Stack.Screen
+        name="Login"
         component={LoginScreen}
         options={{
           animation: 'slide_from_right',
