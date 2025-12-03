@@ -67,7 +67,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         />
       )}
 
-      <View style={styles.content}>
+      <View style={[styles.content, !showTabs && styles.contentNoTabs]}>
         {children}
       </View>
 
@@ -95,5 +95,8 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     marginBottom: 56, // Height of tab bar
+  },
+  contentNoTabs: {
+    marginBottom: 0,
   },
 });

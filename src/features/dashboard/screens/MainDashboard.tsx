@@ -75,9 +75,8 @@ export const MainDashboard: React.FC = () => {
   const [showQuickActions, setShowQuickActions] = useState(false);
 
   // Animations
-  const dashboardScale = useRef(new Animated.Value(1)).current;
   const dashboardOpacity = useRef(new Animated.Value(1)).current;
-  const chatTranslateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const chatOpacity = useRef(new Animated.Value(0)).current;
 
   // Dashboard Items Stagger Animation
   const contentOpacity = useRef(new Animated.Value(0)).current;
@@ -140,7 +139,7 @@ export const MainDashboard: React.FC = () => {
     }
   };
 
-  // Mode change handler - Clean full-screen transition
+  // Mode change handler - Clean full-screen transition (fade)
   const handleModeChange = useCallback((newMode: 'keyboard' | 'chat') => {
     if (newMode === mode) return; // Already in this mode
 
@@ -148,7 +147,7 @@ export const MainDashboard: React.FC = () => {
     AsyncStorage.setItem(MODE_KEY, newMode).catch(console.error);
 
     if (newMode === 'chat') {
-      // Transition TO AI Mode - Full screen takeover
+      // Transition TO AI Mode - Full screen with fade
       setMode('chat');
       Animated.parallel([
         Animated.timing(dashboardOpacity, {
@@ -156,33 +155,30 @@ export const MainDashboard: React.FC = () => {
           duration: 200,
           useNativeDriver: true,
         }),
-        Animated.timing(chatTranslateY, {
-          toValue: 0,
-          duration: 300,
+        Animated.timing(chatOpacity, {
+          toValue: 1,
+          duration: 250,
           useNativeDriver: true,
-          easing: Easing.out(Easing.cubic),
         }),
       ]).start();
     } else {
       // Transition TO Dashboard (keyboard mode)
       Animated.parallel([
-        Animated.timing(chatTranslateY, {
-          toValue: SCREEN_HEIGHT,
-          duration: 250,
+        Animated.timing(chatOpacity, {
+          toValue: 0,
+          duration: 200,
           useNativeDriver: true,
-          easing: Easing.in(Easing.cubic),
         }),
         Animated.timing(dashboardOpacity, {
           toValue: 1,
-          duration: 300,
-          delay: 100,
+          duration: 250,
           useNativeDriver: true,
         }),
       ]).start(({ finished }) => {
         if (finished) setMode('keyboard');
       });
     }
-  }, [mode, dashboardOpacity, chatTranslateY]);
+  }, [mode, dashboardOpacity, chatOpacity]);
 
   // Toggle handler for AssistantCard
   const handleSwitchMode = useCallback(() => {
@@ -297,14 +293,19 @@ export const MainDashboard: React.FC = () => {
     return <CollaboratorsScreen />;
   }
 
+  // In AI mode: hide header and tabs for true full-screen
+  const isAIMode = mode === 'chat';
+
   return (
     <MainLayout
-      activeTab={mode === 'chat' ? 'chat' : 'home'}
+      activeTab={isAIMode ? 'chat' : 'home'}
       headerTitle=""
+      showHeader={!isAIMode}
+      showTabs={!isAIMode}
       activeMode={mode}
       onModeChange={handleModeChange}
     >
-      <StatusBar barStyle={mode === 'chat' ? "light-content" : "dark-content"} />
+      <StatusBar barStyle={isAIMode ? "light-content" : "dark-content"} />
 
       <View style={[styles.container, { backgroundColor: theme.colors.utility.primaryBackground }]}>
 
@@ -312,10 +313,7 @@ export const MainDashboard: React.FC = () => {
         <Animated.View
           style={[
             styles.dashboardLayer,
-            {
-              transform: [{ scale: dashboardScale }],
-              opacity: dashboardOpacity,
-            }
+            { opacity: dashboardOpacity }
           ]}
         >
           <ScrollView
@@ -394,12 +392,12 @@ export const MainDashboard: React.FC = () => {
           style={[
             styles.chatLayer,
             {
-              transform: [{ translateY: chatTranslateY }],
+              opacity: chatOpacity,
               backgroundColor: theme.colors.utility.primaryBackground,
-              zIndex: 100,
               paddingTop: insets.top,
             }
           ]}
+          pointerEvents={isAIMode ? 'auto' : 'none'}
         >
           {/* AI Mode Header */}
           <View style={[styles.chatHeader, { backgroundColor: theme.colors.utility.primaryBackground, borderBottomColor: theme.colors.utility.secondaryText + '15' }]}>
@@ -449,7 +447,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    bottom: 80, // Leave space for bottom tab bar
+    bottom: 0, // Full screen - tab bar is hidden in AI mode
   },
   scrollView: {
     flex: 1,
