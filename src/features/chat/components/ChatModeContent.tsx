@@ -14,10 +14,11 @@ import {
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
-import { ChatMessage, ChatIntent } from '../../../types/chat';
+import { ChatMessage, ChatIntent, ChatWidgetType } from '../../../types/chat';
 import { mainIntents, assistantResponses } from '../../../dummydata/chatIntents';
 import { ChatBubble } from './ChatBubble';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { OrbitWidget } from './widgets/OrbitWidget';
 
 interface ChatModeContentProps {
   userName?: string;
@@ -107,13 +108,20 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
     return () => clearTimeout(timer);
   }, [messages]);
 
-  const addAssistantMessage = (text: string, intents?: ChatIntent[]) => {
+  const addAssistantMessage = (
+    text: string,
+    intents?: ChatIntent[],
+    widget?: ChatWidgetType,
+    widgetData?: any
+  ) => {
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'assistant',
       text,
       timestamp: new Date(),
       intents,
+      widget,
+      widgetData,
     };
     setMessages((prev) => [...prev, newMessage]);
     if (intents) {
@@ -133,6 +141,28 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
 
   const handleIntentPress = (intent: ChatIntent) => {
     addUserMessage(intent.label);
+
+    // Check for collaborators-related intents to show the OrbitWidget
+    const isCollaboratorIntent =
+      intent.id === 'collaborators' ||
+      intent.action === 'view_family' ||
+      intent.action === 'view_collaborators' ||
+      intent.category === 'collaborators';
+
+    if (isCollaboratorIntent) {
+      // Special handling: Show the holographic OrbitWidget
+      setIsTyping(true);
+      setTimeout(() => {
+        setIsTyping(false);
+        addAssistantMessage(
+          "Here is your current Trusted Network:",
+          intent.subIntents,
+          'orbit',
+          { nodeCount: 3 }
+        );
+      }, 600);
+      return;
+    }
 
     if (intent.subIntents && intent.subIntents.length > 0) {
       setIntentHistory((prev) => [...prev, currentIntents]);
@@ -209,6 +239,18 @@ export const ChatModeContent: React.FC<ChatModeContentProps> = ({ userName = 'Us
               type={message.type}
               text={message.text}
             />
+            {/* Render widget if present */}
+            {message.widget === 'orbit' && (
+              <View style={styles.widgetContainer}>
+                <OrbitWidget
+                  title="Your Trusted Network"
+                  nodeCount={message.widgetData?.nodeCount || 3}
+                />
+                <Text style={[styles.widgetHint, { color: theme.colors.utility.secondaryText }]}>
+                  Tap to expand view
+                </Text>
+              </View>
+            )}
           </AnimatedMessage>
         ))}
         {isTyping && (
@@ -415,5 +457,15 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  widgetContainer: {
+    marginTop: -4,
+    marginBottom: 8,
+  },
+  widgetHint: {
+    fontSize: 11,
+    marginLeft: 20,
+    marginTop: 4,
+    fontStyle: 'italic',
   },
 });

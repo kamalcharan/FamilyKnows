@@ -170,6 +170,7 @@ export const AssetsHubScreen: React.FC = () => {
           styles.assetCard,
           { backgroundColor: theme.colors.utility.secondaryBackground }
         ]}
+        onPress={() => navigation.navigate('AssetDetail' as any, { assetId: item.id })}
       >
         <View style={styles.cardHeader}>
           <View style={[styles.iconBox, { backgroundColor: item.color + '15' }]}>
