@@ -55,9 +55,11 @@ export const LoginScreen: React.FC = () => {
       {/* Top Section - Dark Background */}
       <View style={[styles.topSection, { backgroundColor: theme.colors.utility.primaryText }]}>
         <View style={styles.logoContainer}>
-          <View style={[styles.logo, { backgroundColor: theme.colors.utility.secondaryBackground }]}>
-            <Text style={[styles.logoText, { color: theme.colors.brand.primary }]}>FK</Text>
-          </View>
+          <Image
+            source={require('../../../../assets/images/family-knows-logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={[styles.brandName, { color: theme.colors.utility.secondaryBackground }]}>
             FamilyKnows
           </Text>
@@ -140,16 +142,10 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   logo: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 16,
-  },
-  logoText: {
-    fontSize: 36,
-    fontWeight: '700',
   },
   brandName: {
     fontSize: 28,

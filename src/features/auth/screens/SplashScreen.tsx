@@ -7,6 +7,7 @@ import {
   Animated,
   Dimensions,
   StatusBar,
+  Image,
 } from 'react-native';
 import { useTheme } from '../../../theme/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
@@ -112,9 +113,11 @@ export const SplashScreen: React.FC = () => {
           },
         ]}
       >
-        <View style={[styles.logo, { backgroundColor: theme.colors.utility.secondaryBackground }]}>
-          <Text style={[styles.logoText, { color: theme.colors.brand.primary }]}>FK</Text>
-        </View>
+        <Image
+          source={require('../../../../assets/images/family-knows-logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={[styles.appName, { color: theme.colors.utility.secondaryBackground }]}>
           FamilyKnows
         </Text>
@@ -154,18 +157,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  logoText: {
-    fontSize: 48,
-    fontWeight: '700',
   },
   appName: {
     fontSize: 32,
