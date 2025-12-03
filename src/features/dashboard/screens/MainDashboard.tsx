@@ -196,7 +196,7 @@ export const MainDashboard: React.FC = () => {
     } else if (screenId === 'health') {
       navigation.navigate('HealthTimeline');
     } else if (screenId === 'collaborators') {
-      setActiveScreen('collaborators');
+      navigation.navigate('CollaboratorsOrbit');
     }
     // Add other screen navigations here
   };
