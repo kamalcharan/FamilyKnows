@@ -119,8 +119,12 @@ export const StoryOnboardingScreen: React.FC = () => {
   });
 
   const handleFinish = () => {
-    // Pass data to the next screen or save locally
-    navigation.replace('PhoneAuth', { userName, familyName });
+    // Pass data to the next screen with correct parameter names for the data bridge
+    navigation.replace('PhoneAuth', {
+      isFromSettings: false,
+      prefillName: userName,
+      prefillFamily: familyName,
+    });
   };
 
   return (
