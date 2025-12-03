@@ -193,6 +193,8 @@ export const MainDashboard: React.FC = () => {
 
     if (screenId === 'assets') {
       navigation.navigate('AssetsHub');
+    } else if (screenId === 'health') {
+      navigation.navigate('HealthTimeline');
     } else if (screenId === 'collaborators') {
       setActiveScreen('collaborators');
     }

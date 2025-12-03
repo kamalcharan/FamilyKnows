@@ -14,11 +14,13 @@ import { PricingScreen } from '../features/onboarding/screens/PricingScreen';
 
 // Feature screens
 import { AssetsHubScreen } from '../features/assets';
+import { HealthTimelineScreen } from '../features/health';
 
 export type MainStackParamList = {
   Dashboard: undefined;
   // Feature screens
   AssetsHub: undefined;
+  HealthTimeline: undefined;
   // Settings screens
   SettingsProfile: { isFromSettings: boolean };
   SettingsPhone: { isFromSettings: boolean };
@@ -45,6 +47,11 @@ export const MainNavigator: React.FC = () => {
       <Stack.Screen
         name="AssetsHub"
         component={AssetsHubScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="HealthTimeline"
+        component={HealthTimelineScreen}
         options={{ animation: 'slide_from_right' }}
       />
 
