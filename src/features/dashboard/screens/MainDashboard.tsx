@@ -197,6 +197,8 @@ export const MainDashboard: React.FC = () => {
       navigation.navigate('HealthTimeline');
     } else if (screenId === 'collaborators') {
       navigation.navigate('CollaboratorsOrbit');
+    } else if (screenId === 'documents') {
+      navigation.navigate('DocumentsVault');
     }
     // Add other screen navigations here
   };

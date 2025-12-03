@@ -16,6 +16,7 @@ import { PricingScreen } from '../features/onboarding/screens/PricingScreen';
 import { AssetsHubScreen } from '../features/assets';
 import { HealthTimelineScreen, HealthRecordDetailScreen } from '../features/health';
 import { CollaboratorsOrbitScreen } from '../features/collaborators';
+import { DocumentsVaultScreen } from '../features/documents';
 
 export type MainStackParamList = {
   Dashboard: undefined;
@@ -24,6 +25,7 @@ export type MainStackParamList = {
   HealthTimeline: undefined;
   HealthRecordDetail: { recordId: string };
   CollaboratorsOrbit: undefined;
+  DocumentsVault: undefined;
   // Settings screens
   SettingsProfile: { isFromSettings: boolean };
   SettingsPhone: { isFromSettings: boolean };
@@ -69,6 +71,11 @@ export const MainNavigator: React.FC = () => {
         name="CollaboratorsOrbit"
         component={CollaboratorsOrbitScreen}
         options={{ animation: 'fade' }}
+      />
+      <Stack.Screen
+        name="DocumentsVault"
+        component={DocumentsVaultScreen}
+        options={{ animation: 'slide_from_right' }}
       />
 
       {/* Settings Screens */}
