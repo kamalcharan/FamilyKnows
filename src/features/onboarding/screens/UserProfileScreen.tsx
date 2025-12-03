@@ -38,9 +38,21 @@ interface Props {
 
 export const UserProfileScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme } = useTheme();
-  const { isFromSettings } = route.params;
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const { isFromSettings, prefillName, prefillFamily } = route.params;
+
+  // Parse first and last name from prefillName
+  const parseNames = (fullName?: string) => {
+    if (!fullName) return { first: '', last: '' };
+    const parts = fullName.trim().split(' ');
+    return {
+      first: parts[0] || '',
+      last: parts.slice(1).join(' ') || '',
+    };
+  };
+
+  const parsedNames = parseNames(prefillName);
+  const [firstName, setFirstName] = useState(parsedNames.first);
+  const [lastName, setLastName] = useState(parsedNames.last);
   const [selectedGender, setSelectedGender] = useState<string>('');
   const [dob, setDob] = useState<Date | undefined>(undefined);
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -100,19 +112,26 @@ export const UserProfileScreen: React.FC<Props> = ({ navigation, route }) => {
         dob: dob?.toISOString(),
         profileImage,
       };
-      
+
       if (isFromSettings) {
         // If from settings, just go back
         navigation.goBack();
       } else {
-        // Continue onboarding
-        navigation.navigate('ThemeSelection', { isFromSettings: false });
+        // Continue onboarding - pass prefillFamily forward
+        navigation.navigate('ThemeSelection', {
+          isFromSettings: false,
+          prefillFamily,
+        });
       }
     }
   };
 
   const handleSkip = () => {
-    navigation.navigate('ThemeSelection', { isFromSettings: false });
+    // Pass prefillFamily forward even when skipping
+    navigation.navigate('ThemeSelection', {
+      isFromSettings: false,
+      prefillFamily,
+    });
   };
 
   const pickImage = async () => {

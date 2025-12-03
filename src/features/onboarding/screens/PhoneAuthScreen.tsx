@@ -43,6 +43,9 @@ const PHONE_NUMBERS_KEY = '@FamilyKnows:phoneNumbers';
 export const PhoneAuthScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme } = useTheme();
   const isFromSettings = route?.params?.isFromSettings || false;
+
+  // Extract prefill data to carry forward
+  const { prefillName, prefillFamily } = route?.params || {};
   
   // State
   const [mode, setMode] = useState<'list' | 'add' | 'verify'>('list');
@@ -292,7 +295,12 @@ export const PhoneAuthScreen: React.FC<Props> = ({ navigation, route }) => {
       if (isFromSettings) {
         navigation.goBack();
       } else {
-        navigation.navigate('UserProfile', { isFromSettings: false });
+        // Pass prefill data forward to UserProfile
+        navigation.navigate('UserProfile', {
+          isFromSettings: false,
+          prefillName,
+          prefillFamily,
+        });
       }
     }
   };
@@ -306,7 +314,12 @@ export const PhoneAuthScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const handleSkip = () => {
-    navigation.navigate('UserProfile', { isFromSettings: false });
+    // Pass prefill data forward even when skipping
+    navigation.navigate('UserProfile', {
+      isFromSettings: false,
+      prefillName,
+      prefillFamily,
+    });
   };
 
   const handleBack = () => {

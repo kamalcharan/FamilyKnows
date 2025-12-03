@@ -35,7 +35,7 @@ interface Props {
 
 export const LanguageSelectionScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme } = useTheme();
-  const { isFromSettings } = route.params;
+  const { isFromSettings, prefillFamily } = route.params;
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [showKeyboardGuide, setShowKeyboardGuide] = useState(false);
   const [testInput, setTestInput] = useState('');
@@ -72,16 +72,24 @@ export const LanguageSelectionScreen: React.FC<Props> = ({ navigation, route }) 
 
   const handleContinue = () => {
     // Save language preference (we'll implement this with AsyncStorage/SQLite later)
-    
+
     if (isFromSettings) {
       navigation.goBack();
     } else {
-      navigation.navigate('GoogleDriveConnect', { isFromSettings: false });
+      // Pass prefillFamily forward
+      navigation.navigate('GoogleDriveConnect', {
+        isFromSettings: false,
+        prefillFamily,
+      });
     }
   };
 
   const handleSkip = () => {
-    navigation.navigate('GoogleDriveConnect', { isFromSettings: false });
+    // Pass prefillFamily forward even when skipping
+    navigation.navigate('GoogleDriveConnect', {
+      isFromSettings: false,
+      prefillFamily,
+    });
   };
 
   const renderLanguageOption = (language: Language) => {

@@ -33,7 +33,7 @@ interface Props {
 
 export const GoogleDriveConnectScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme } = useTheme();
-  const { isFromSettings } = route.params;
+  const { isFromSettings, prefillFamily } = route.params;
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -93,12 +93,20 @@ export const GoogleDriveConnectScreen: React.FC<Props> = ({ navigation, route })
     if (isFromSettings) {
       navigation.goBack();
     } else {
-      navigation.navigate('FamilySetup', { isFromSettings: false });
+      // Pass prefillFamily forward - this is the final delivery point!
+      navigation.navigate('FamilySetup', {
+        isFromSettings: false,
+        prefillFamily,
+      });
     }
   };
 
   const handleSkip = () => {
-    navigation.navigate('FamilySetup', { isFromSettings: false });
+    // Pass prefillFamily forward even when skipping
+    navigation.navigate('FamilySetup', {
+      isFromSettings: false,
+      prefillFamily,
+    });
   };
 
   const benefits = [

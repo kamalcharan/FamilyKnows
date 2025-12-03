@@ -60,24 +60,28 @@ const generateMockWorkspace = (name: string, isFirst: boolean = false) => {
 
 export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme } = useTheme();
-  const { isFromSettings } = route.params;
-  const { 
-    workspaces, 
-    activeWorkspace, 
-    setActiveWorkspace, 
+  const { isFromSettings, prefillFamily } = route.params;
+  const {
+    workspaces,
+    activeWorkspace,
+    setActiveWorkspace,
     updateWorkspaces,
     showWorkspaceSwitcher: globalShowSwitcher,
-    setShowWorkspaceSwitcher: setGlobalShowSwitcher 
+    setShowWorkspaceSwitcher: setGlobalShowSwitcher
   } = useWorkspace();
-  
-  const [setupMode, setSetupMode] = useState<SetupMode>('choose');
+
+  // If we have a prefillFamily from StoryOnboarding, start in 'create' mode
+  // This is the "Delivery" - the user sees their family name already filled in!
+  const [setupMode, setSetupMode] = useState<SetupMode>(
+    prefillFamily && !isFromSettings ? 'create' : 'choose'
+  );
   const [showLocalWorkspaceSwitcher, setShowLocalWorkspaceSwitcher] = useState(false);
   const [showMemberManager, setShowMemberManager] = useState(false);
   const [showMemberOptions, setShowMemberOptions] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
-  
-  // Form states
-  const [familyName, setFamilyName] = useState('');
+
+  // Form states - pre-fill familyName if we have it from the Story
+  const [familyName, setFamilyName] = useState(prefillFamily || '');
   const [inviteCode, setInviteCode] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
 
@@ -118,11 +122,16 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
     if (isFromSettings && workspaces.length > 0) {
       setSetupMode('manage');
     } else if (!isFromSettings && workspaces.length === 0) {
-      setSetupMode('choose');
+      // If we have prefillFamily from Story, stay in 'create' mode
+      // Otherwise, show the 'choose' mode
+      if (!prefillFamily) {
+        setSetupMode('choose');
+      }
+      // If prefillFamily exists, we already started in 'create' mode
     } else if (isFromSettings && workspaces.length === 0) {
       setSetupMode('choose');
     }
-  }, [isFromSettings, workspaces]);
+  }, [isFromSettings, workspaces, prefillFamily]);
 
   const isUserAdmin = (workspace: any): boolean => {
     const currentUser = workspace.members.find((m: any) => m.id === USER_ID);
@@ -478,40 +487,60 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const renderCreateMode = () => (
     <>
-      <TouchableOpacity 
-        style={styles.backButton} 
-        onPress={() => setSetupMode(workspaces.length > 0 ? 'manage' : 'choose')}
-      >
-        <MaterialCommunityIcons 
-          name="arrow-left" 
-          size={24} 
-          color={theme.colors.utility.primaryText} 
-        />
-        <Text style={[styles.backText, { color: theme.colors.utility.primaryText }]}>
-          Back
-        </Text>
-      </TouchableOpacity>
+      {/* Only show back button if user can go back to choose mode */}
+      {!prefillFamily && (
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => setSetupMode(workspaces.length > 0 ? 'manage' : 'choose')}
+        >
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color={theme.colors.utility.primaryText}
+          />
+          <Text style={[styles.backText, { color: theme.colors.utility.primaryText }]}>
+            Back
+          </Text>
+        </TouchableOpacity>
+      )}
 
       <View style={styles.formContainer}>
         <Text style={[styles.formTitle, { color: theme.colors.utility.primaryText }]}>
-          Create Your Family Workspace
+          {prefillFamily
+            ? 'Confirm Your Family Workspace'
+            : 'Create Your Family Workspace'
+          }
         </Text>
-        
+
+        {/* Show a success indicator when prefilled */}
+        {prefillFamily && (
+          <View style={[styles.prefillNotice, { backgroundColor: theme.colors.semantic.success + '15' }]}>
+            <MaterialCommunityIcons
+              name="check-circle"
+              size={20}
+              color={theme.colors.semantic.success}
+            />
+            <Text style={[styles.prefillText, { color: theme.colors.semantic.success }]}>
+              We remembered your family name from the story!
+            </Text>
+          </View>
+        )}
+
         <Input
           placeholder="Enter Family Name"
           value={familyName}
           onChangeText={setFamilyName}
           leftIcon={
-            <MaterialCommunityIcons 
-              name="home-heart" 
-              size={20} 
-              color={theme.colors.utility.secondaryText} 
+            <MaterialCommunityIcons
+              name="home-heart"
+              size={20}
+              color={theme.colors.utility.secondaryText}
             />
           }
           containerStyle={styles.inputContainer}
           inputContainerStyle={[
             styles.input,
-            { 
+            {
               backgroundColor: theme.colors.utility.secondaryBackground,
               borderColor: errors.familyName ? theme.colors.semantic.error : 'transparent'
             }
@@ -522,11 +551,14 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
         />
 
         <Text style={[styles.helperText, { color: theme.colors.utility.secondaryText }]}>
-          Choose a name that represents your family. This can be your family surname or a creative name.
+          {prefillFamily
+            ? 'You can edit the name above or keep it as is.'
+            : 'Choose a name that represents your family. This can be your family surname or a creative name.'
+          }
         </Text>
 
         <Button
-          title="Create Family"
+          title={prefillFamily ? 'Confirm & Create' : 'Create Family'}
           onPress={handleCreateFamily}
           buttonStyle={[styles.primaryButton, { backgroundColor: theme.colors.brand.primary }]}
           titleStyle={styles.primaryButtonText}
@@ -1124,6 +1156,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 20,
     textAlign: 'center',
+  },
+  prefillNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+    gap: 8,
+  },
+  prefillText: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
   },
   inputContainer: {
     paddingHorizontal: 0,

@@ -15,7 +15,7 @@ import {
   Easing,
 } from 'react-native';
 import { useTheme } from '../../../theme/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../../navigation/types';
 import { GoogleIcon } from '../components/GoogleIcon';
@@ -26,6 +26,8 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
   'Login'
 >;
+
+type LoginScreenRouteProp = RouteProp<AuthStackParamList, 'Login'>;
 
 // Animated Button Component
 const AnimatedButton = ({ children, onPress, style, disabled }: any) => {
@@ -67,7 +69,11 @@ const AnimatedButton = ({ children, onPress, style, disabled }: any) => {
 export const LoginScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<LoginScreenNavigationProp>();
+  const route = useRoute<LoginScreenRouteProp>();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Extract prefill data from StoryOnboarding
+  const { userName, familyName } = route.params || {};
 
   // Animation values
   const logoOpacity = useRef(new Animated.Value(0)).current;
@@ -149,7 +155,12 @@ export const LoginScreen: React.FC = () => {
     try {
       // TODO: Implement Google Sign-In
       setTimeout(() => {
-        navigation.replace('PhoneAuth' as any, { isFromSettings: false });
+        // Pass prefill data forward to PhoneAuth
+        navigation.replace('PhoneAuth' as any, {
+          isFromSettings: false,
+          prefillName: userName,
+          prefillFamily: familyName,
+        });
       }, 2000);
     } catch (error) {
       console.error('Login error:', error);

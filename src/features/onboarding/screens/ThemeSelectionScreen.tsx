@@ -37,7 +37,7 @@ const THEME_CARD_WIDTH = (SCREEN_WIDTH - 60 - 10) / 2; // 2 columns with gap
 
 export const ThemeSelectionScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme, setTheme, isDarkMode, toggleDarkMode, availableThemes, currentThemeId } = useTheme();
-  const { isFromSettings } = route.params;
+  const { isFromSettings, prefillFamily } = route.params;
   const [selectedThemeId, setSelectedThemeId] = useState(currentThemeId);
 
   // Entrance animations
@@ -73,16 +73,24 @@ export const ThemeSelectionScreen: React.FC<Props> = ({ navigation, route }) => 
   const handleContinue = () => {
     // Apply the selected theme
     setTheme(selectedThemeId);
-    
+
     if (isFromSettings) {
       navigation.goBack();
     } else {
-      navigation.navigate('LanguageSelection', { isFromSettings: false });
+      // Pass prefillFamily forward
+      navigation.navigate('LanguageSelection', {
+        isFromSettings: false,
+        prefillFamily,
+      });
     }
   };
 
   const handleSkip = () => {
-    navigation.navigate('LanguageSelection', { isFromSettings: false });
+    // Pass prefillFamily forward even when skipping
+    navigation.navigate('LanguageSelection', {
+      isFromSettings: false,
+      prefillFamily,
+    });
   };
 
   const renderThemeCard = (themeItem: any) => {
