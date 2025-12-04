@@ -2,30 +2,34 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../hooks/useTheme';
 import './MobileAppShowcase.css';
+import { DashboardMockup, OrbitMockup, StoryMockup } from './AppScreenMockups';
 
 const MobileAppShowcase: React.FC = () => {
   const { theme } = useTheme();
   const [activeScreen, setActiveScreen] = useState(1);
 
-  // Placeholder screens - replace with actual app screenshots
+  // REAL APP SCREENS - Award-Winning UI
   const screens = [
     {
       id: 0,
-      title: 'Dashboard',
-      description: 'Your family wealth at a glance',
-      color: theme.colors.primary.main,
+      title: 'Story Onboarding',
+      description: 'Build your legacy visually',
+      component: <StoryMockup />,
+      color: '#0F172A',
     },
     {
       id: 1,
-      title: 'Asset Vault',
-      description: 'Secure storage for all documents',
-      color: theme.colors.secondary.main,
+      title: 'Fluid Dashboard',
+      description: 'AI Command Center',
+      component: <DashboardMockup />,
+      color: '#F1F5F9',
     },
     {
       id: 2,
-      title: 'Family Timeline',
-      description: 'Stay updated with family activities',
-      color: theme.colors.success.main,
+      title: 'Circle of Trust',
+      description: 'Visualize your network',
+      component: <OrbitMockup />,
+      color: '#0F172A',
     },
   ];
 
@@ -40,10 +44,10 @@ const MobileAppShowcase: React.FC = () => {
         {/* Header */}
         <div className="showcase-header">
           <h2 className="showcase-title" style={{ color: theme.colors.text.primary }}>
-            Beautiful, Intuitive, Secure
+            Experience the "Vault"
           </h2>
           <p className="showcase-subtitle" style={{ color: theme.colors.text.secondary }}>
-            Designed for families, built with love - available on iOS & Android
+            Fluid animations, holographic widgets, and secure by design.
           </p>
         </div>
 
@@ -62,10 +66,11 @@ const MobileAppShowcase: React.FC = () => {
                     translateX(${position * 350}px)
                     translateZ(${isActive ? '0' : '-200px'})
                     rotateY(${position * 45}deg)
-                    scale(${isActive ? 1 : 0.8})
+                    scale(${isActive ? 1 : 0.85})
                   `,
-                  opacity: isActive ? 1 : 0.4,
+                  opacity: isActive ? 1 : 0.5,
                   zIndex: isActive ? 10 : 1,
+                  cursor: 'pointer',
                 }}
                 onClick={() => setActiveScreen(index)}
               >
@@ -73,33 +78,26 @@ const MobileAppShowcase: React.FC = () => {
                 <div
                   className="phone-frame"
                   style={{
-                    background: `linear-gradient(145deg, ${theme.colors.background.dark}, ${theme.colors.primary.dark})`,
+                    background: `linear-gradient(145deg, #1e293b, #0f172a)`,
+                    borderColor: '#334155',
+                    boxShadow: isActive
+                      ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                      : '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
                   }}
                 >
                   {/* Notch */}
-                  <div className="phone-notch" style={{ backgroundColor: theme.colors.background.dark }} />
+                  <div className="phone-notch" style={{ backgroundColor: '#0f172a' }} />
 
-                  {/* Screen Content */}
-                  <div
-                    className="phone-screen"
-                    style={{ backgroundColor: screen.color }}
-                  >
-                    {/* Placeholder Screen */}
-                    <div className="screen-content">
-                      <div className="screen-placeholder">
-                        <div className="screen-icon">📱</div>
-                        <div className="screen-text" style={{ color: theme.colors.common.white }}>
-                          {screen.title}
-                        </div>
-                        <div className="screen-subtext" style={{ color: theme.colors.common.white }}>
-                          {screen.description}
-                        </div>
-                      </div>
-                    </div>
+                  {/* Screen Content - Render the Mockup Component */}
+                  <div className="phone-screen" style={{ backgroundColor: screen.color }}>
+                    {screen.component}
                   </div>
 
                   {/* Home Indicator */}
-                  <div className="home-indicator" style={{ backgroundColor: theme.colors.common.white }} />
+                  <div
+                    className="home-indicator"
+                    style={{ backgroundColor: isActive ? '#fff' : '#666' }}
+                  />
                 </div>
               </div>
             );
@@ -114,8 +112,9 @@ const MobileAppShowcase: React.FC = () => {
               className={`screen-nav-item ${activeScreen === index ? 'active' : ''}`}
               onClick={() => setActiveScreen(index)}
               style={{
-                borderColor: activeScreen === index ? theme.colors.primary.main : theme.colors.text.disabled,
+                borderColor: activeScreen === index ? theme.colors.primary.main : 'transparent',
                 color: activeScreen === index ? theme.colors.primary.main : theme.colors.text.secondary,
+                backgroundColor: activeScreen === index ? `${theme.colors.primary.main}10` : 'transparent',
               }}
             >
               {screen.title}
@@ -123,7 +122,42 @@ const MobileAppShowcase: React.FC = () => {
           ))}
         </div>
 
-        {/* Download Buttons */}
+        {/* Feature Highlights */}
+        <div className="feature-highlights" style={{ marginBottom: '2rem' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '2rem',
+            flexWrap: 'wrap',
+          }}>
+            {[
+              { icon: '🎭', text: 'Fluid Morph Transitions' },
+              { icon: '🔮', text: 'Holographic Widgets' },
+              { icon: '🌳', text: 'Story-Driven Onboarding' },
+              { icon: '🔒', text: 'Bank-Grade Security' },
+            ].map((feature, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  background: `${theme.colors.background.dark}08`,
+                  borderRadius: '100px',
+                  border: `1px solid ${theme.colors.text.disabled}30`,
+                }}
+              >
+                <span style={{ fontSize: '1.25rem' }}>{feature.icon}</span>
+                <span style={{ fontSize: '0.875rem', color: theme.colors.text.secondary }}>
+                  {feature.text}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Download Section */}
         <div className="download-section">
           <h3 className="download-title" style={{ color: theme.colors.text.primary }}>
             Coming Soon to Your Device
