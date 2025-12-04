@@ -1,5 +1,5 @@
 // src/components/navigation/BottomTabBar.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,8 +9,7 @@ import {
 import { useTheme } from '../../theme/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { QuickActionCard } from '../shared/QuickActionCard';
-import { defaultQuickActions } from '../../dummydata/quickActions';
+import { useNavigation } from '@react-navigation/native';
 
 export type TabRoute = 'home' | 'assets' | 'documents' | 'services' | 'family';
 export type InteractionMode = 'chat' | 'keyboard'; // voice hidden for now
@@ -30,15 +29,12 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
 }) => {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const [showActions, setShowActions] = useState(false);
-  const [localMode, setLocalMode] = useState<InteractionMode>('keyboard');
+  const navigation = useNavigation<any>();
+  const [localMode, setLocalMode] = React.useState<InteractionMode>('keyboard');
 
   // Use prop if provided, otherwise fall back to local state
   const activeMode = propActiveMode ?? localMode;
 
-  // Animation values
-  const plusRotation = useRef(new Animated.Value(0)).current;
-  
   // Scale animations for mode buttons
   const modeScales = useRef({
     chat: new Animated.Value(activeMode === 'chat' ? 1.2 : 0.8),
@@ -58,15 +54,6 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
       }).start();
     });
   }, [activeMode, modeScales]);
-
-  useEffect(() => {
-    // Animate plus button rotation
-    Animated.timing(plusRotation, {
-      toValue: showActions ? 1 : 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [showActions, plusRotation]);
 
   const handleModeChange = (mode: InteractionMode) => {
     if (onModeChange) {
@@ -144,10 +131,10 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
     );
   };
 
-  const rotateInterpolate = plusRotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '45deg'],
-  });
+  // Navigate to Entity Wizard
+  const handleAddPress = () => {
+    navigation.navigate('AddAsset');
+  };
 
   return (
     <>
@@ -187,35 +174,22 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
             })()}
           </View>
 
-          {/* Add Button */}
-          <Animated.View
-            style={{
-              transform: [{ rotate: rotateInterpolate }],
-            }}
+          {/* Add Button - Opens Entity Wizard */}
+          <TouchableOpacity
+            style={styles.addButtonContainer}
+            onPress={handleAddPress}
+            activeOpacity={0.8}
           >
-            <TouchableOpacity
-              style={styles.addButtonContainer}
-              onPress={() => setShowActions(!showActions)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.addButton, { backgroundColor: theme.colors.brand.primary }]}>
-                <MaterialCommunityIcons
-                  name="plus"
-                  size={28}
-                  color="#fff"
-                />
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
+            <View style={[styles.addButton, { backgroundColor: theme.colors.brand.primary }]}>
+              <MaterialCommunityIcons
+                name="plus"
+                size={28}
+                color="#fff"
+              />
+            </View>
+          </TouchableOpacity>
         </View>
       </View>
-
-      {/* Quick Action Card */}
-      <QuickActionCard
-        visible={showActions}
-        onClose={() => setShowActions(false)}
-        actions={defaultQuickActions}
-      />
     </>
   );
 };
