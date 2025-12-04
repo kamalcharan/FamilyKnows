@@ -1,4 +1,5 @@
 // src/features/dashboard/screens/MainDashboard.tsx
+// Fluid Morph Dashboard - Dual Layer Architecture
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
@@ -20,16 +21,12 @@ import { useNavigation } from '@react-navigation/native';
 import { AssistantCard } from '../components/AssistantCard';
 import { CollaboratorsCard } from '../components/CollaboratorsCard';
 import { ChatModeContent } from '../../chat';
-import { CollaboratorsScreen } from '../../collaborators';
-import { QuickActionCard } from '../../../components/shared/QuickActionCard';
-import { defaultQuickActions } from '../../../dummydata/quickActions';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const RECENT_SCREENS_KEY = '@FamilyKnows:recentScreens';
-const MODE_KEY = '@FamilyKnows:interfaceMode';
 
-// Interactive Card Component with Scale Animation
+// Interactive Card with Scale Animation
 const AnimatedCard = ({ children, onPress, style }: any) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -73,20 +70,18 @@ export const MainDashboard: React.FC = () => {
   // State
   const [mode, setMode] = useState<'keyboard' | 'chat'>('keyboard');
   const [recentScreens, setRecentScreens] = useState<string[]>([]);
-  const [activeScreen, setActiveScreen] = useState<string | null>(null);
-  const [showQuickActions, setShowQuickActions] = useState(false);
 
-  // Animations
-  const dashboardOpacity = useRef(new Animated.Value(1)).current;
-  const chatOpacity = useRef(new Animated.Value(0)).current;
+  // DUAL-LAYER ANIMATIONS
+  // Dashboard Recede Animation (0 = normal, 1 = receded)
+  const dashboardAnim = useRef(new Animated.Value(0)).current;
+  // Chat Slide Animation (starts off-screen)
+  const chatSlideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
-  // Dashboard Items Stagger Animation
+  // Entrance animation
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const contentTranslateY = useRef(new Animated.Value(20)).current;
 
-  // Load saved mode and recent screens on mount
   useEffect(() => {
-    loadSavedMode();
     loadRecentScreens();
     startEntranceAnimation();
   }, []);
@@ -108,24 +103,10 @@ export const MainDashboard: React.FC = () => {
     ]).start();
   };
 
-  const loadSavedMode = async () => {
-    try {
-      const savedMode = await AsyncStorage.getItem(MODE_KEY);
-      if (savedMode === 'chat') {
-        // If saved mode was chat, animate to it after a brief delay
-        setTimeout(() => handleModeChange('chat'), 500);
-      }
-    } catch (error) {
-      console.error('Error loading mode:', error);
-    }
-  };
-
   const loadRecentScreens = async () => {
     try {
       const saved = await AsyncStorage.getItem(RECENT_SCREENS_KEY);
-      if (saved) {
-        setRecentScreens(JSON.parse(saved));
-      }
+      if (saved) setRecentScreens(JSON.parse(saved));
     } catch (error) {
       console.error('Error loading recent screens:', error);
     }
@@ -141,52 +122,59 @@ export const MainDashboard: React.FC = () => {
     }
   };
 
-  // Mode change handler - Clean full-screen transition (fade)
-  const handleModeChange = useCallback((newMode: 'keyboard' | 'chat') => {
-    if (newMode === mode) return; // Already in this mode
+  // --- FLUID TRANSITION LOGIC ---
+  const handleSwitchMode = useCallback(() => {
+    const targetMode = mode === 'keyboard' ? 'chat' : 'keyboard';
 
-    // Save to AsyncStorage
-    AsyncStorage.setItem(MODE_KEY, newMode).catch(console.error);
-
-    if (newMode === 'chat') {
-      // Transition TO AI Mode - Full screen with fade
+    if (targetMode === 'chat') {
       setMode('chat');
+      // OPEN CHAT: Slide up + Recede Dashboard
       Animated.parallel([
-        Animated.timing(dashboardOpacity, {
-          toValue: 0,
-          duration: 200,
+        Animated.timing(dashboardAnim, {
+          toValue: 1, // Receded state
+          duration: 400,
           useNativeDriver: true,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
         }),
-        Animated.timing(chatOpacity, {
-          toValue: 1,
-          duration: 250,
+        Animated.spring(chatSlideAnim, {
+          toValue: 0, // Slide to visible
+          friction: 8,
+          tension: 40,
           useNativeDriver: true,
         }),
       ]).start();
     } else {
-      // Transition TO Dashboard (keyboard mode)
+      // CLOSE CHAT: Slide down + Restore Dashboard
       Animated.parallel([
-        Animated.timing(chatOpacity, {
-          toValue: 0,
-          duration: 200,
+        Animated.timing(dashboardAnim, {
+          toValue: 0, // Restored state
+          duration: 300,
           useNativeDriver: true,
         }),
-        Animated.timing(dashboardOpacity, {
-          toValue: 1,
-          duration: 250,
+        Animated.timing(chatSlideAnim, {
+          toValue: SCREEN_HEIGHT, // Slide away
+          duration: 300,
           useNativeDriver: true,
         }),
-      ]).start(({ finished }) => {
-        if (finished) setMode('keyboard');
-      });
+      ]).start(() => setMode('keyboard'));
     }
-  }, [mode, dashboardOpacity, chatOpacity]);
+  }, [mode, dashboardAnim, chatSlideAnim]);
 
-  // Toggle handler for AssistantCard
-  const handleSwitchMode = useCallback(() => {
-    const newMode = mode === 'keyboard' ? 'chat' : 'keyboard';
-    handleModeChange(newMode);
-  }, [mode, handleModeChange]);
+  // Dashboard Interpolations
+  const dashboardScale = dashboardAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.92],
+  });
+
+  const dashboardOpacity = dashboardAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.6],
+  });
+
+  const dashboardBorderRadius = dashboardAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 24],
+  });
 
   const handleCardPress = (screenId: string) => {
     trackScreenAccess(screenId);
@@ -200,10 +188,9 @@ export const MainDashboard: React.FC = () => {
     } else if (screenId === 'documents') {
       navigation.navigate('DocumentsVault');
     }
-    // Add other screen navigations here
   };
 
-  // Dashboard Cards Configuration
+  // Dashboard Cards with LIVE STATUS BADGES
   const dashboardCards = [
     {
       id: 'tasks',
@@ -211,7 +198,8 @@ export const MainDashboard: React.FC = () => {
       icon: 'clipboard-check',
       color: theme.colors.accent.accent1,
       bgColor: theme.colors.accent.accent1 + '15',
-      description: 'Daily tasks',
+      badge: '2 Due',
+      badgeColor: theme.colors.semantic.warning,
     },
     {
       id: 'assets',
@@ -219,7 +207,8 @@ export const MainDashboard: React.FC = () => {
       icon: 'cube-outline',
       color: theme.colors.accent.accent2,
       bgColor: theme.colors.accent.accent2 + '15',
-      description: 'Track valuables',
+      badge: '1 Alert',
+      badgeColor: theme.colors.semantic.error,
     },
     {
       id: 'health',
@@ -227,7 +216,8 @@ export const MainDashboard: React.FC = () => {
       icon: 'heart-pulse',
       color: theme.colors.accent.accent3,
       bgColor: theme.colors.accent.accent3 + '15',
-      description: 'Health records',
+      badge: null,
+      badgeColor: null,
     },
     {
       id: 'finance',
@@ -235,7 +225,8 @@ export const MainDashboard: React.FC = () => {
       icon: 'cash-multiple',
       color: theme.colors.accent.accent4,
       bgColor: theme.colors.accent.accent4 + '15',
-      description: 'Manage finances',
+      badge: '+12%',
+      badgeColor: theme.colors.semantic.success,
     },
     {
       id: 'documents',
@@ -243,7 +234,8 @@ export const MainDashboard: React.FC = () => {
       icon: 'file-document-multiple',
       color: theme.colors.brand.primary,
       bgColor: theme.colors.brand.primary + '15',
-      description: 'Store docs',
+      badge: null,
+      badgeColor: null,
     },
     {
       id: 'events',
@@ -251,24 +243,10 @@ export const MainDashboard: React.FC = () => {
       icon: 'calendar-star',
       color: theme.colors.brand.secondary,
       bgColor: theme.colors.brand.secondary + '15',
-      description: 'Track events',
+      badge: 'Today',
+      badgeColor: theme.colors.brand.primary,
     },
   ];
-
-  const getDisplayCards = () => {
-    const recent = recentScreens
-      .slice(0, 4)
-      .map(id => dashboardCards.find(card => card.id === id))
-      .filter(Boolean);
-
-    if (recent.length < 4) {
-      const remainingCards = dashboardCards.filter(
-        card => !recent.find(r => r?.id === card.id)
-      );
-      recent.push(...remainingCards.slice(0, 4 - recent.length));
-    }
-    return recent;
-  };
 
   const renderDashboardCard = (card: any) => (
     <AnimatedCard
@@ -283,27 +261,19 @@ export const MainDashboard: React.FC = () => {
         <View style={[styles.cardIconContainer, { backgroundColor: card.bgColor }]}>
           <MaterialCommunityIcons name={card.icon} size={24} color={card.color} />
         </View>
-        <View style={[styles.arrowContainer, { backgroundColor: theme.colors.utility.primaryBackground }]}>
-          <MaterialCommunityIcons name="arrow-right" size={16} color={theme.colors.utility.secondaryText} />
-        </View>
+        {/* LIVE STATUS BADGE */}
+        {card.badge && (
+          <View style={[styles.badge, { backgroundColor: card.badgeColor + '20' }]}>
+            <Text style={[styles.badgeText, { color: card.badgeColor }]}>{card.badge}</Text>
+          </View>
+        )}
       </View>
-
-      <View style={styles.cardContent}>
-        <Text style={[styles.cardTitle, { color: theme.colors.utility.primaryText }]}>
-          {card.title}
-        </Text>
-        <Text style={[styles.cardDescription, { color: theme.colors.utility.secondaryText }]}>
-          {card.description}
-        </Text>
-      </View>
+      <Text style={[styles.cardTitle, { color: theme.colors.utility.primaryText }]}>
+        {card.title}
+      </Text>
     </AnimatedCard>
   );
 
-  if (activeScreen === 'collaborators') {
-    return <CollaboratorsScreen />;
-  }
-
-  // In AI mode: hide header and tabs for true full-screen
   const isAIMode = mode === 'chat';
 
   return (
@@ -313,21 +283,27 @@ export const MainDashboard: React.FC = () => {
       showHeader={!isAIMode}
       showTabs={true}
       activeMode={mode}
-      onModeChange={handleModeChange}
+      onModeChange={handleSwitchMode}
     >
       <StatusBar barStyle={isAIMode ? "light-content" : "dark-content"} />
 
-      <View style={[styles.container, { backgroundColor: theme.colors.utility.primaryBackground }]}>
+      {/* Container with dark background for recede effect */}
+      <View style={[styles.container, { backgroundColor: '#000' }]}>
 
-        {/* DASHBOARD LAYER */}
+        {/* --- LAYER 1: DASHBOARD (Receding) --- */}
         <Animated.View
           style={[
             styles.dashboardLayer,
-            { opacity: dashboardOpacity }
+            {
+              backgroundColor: theme.colors.utility.primaryBackground,
+              transform: [{ scale: dashboardScale }],
+              opacity: dashboardOpacity,
+              borderRadius: dashboardBorderRadius,
+              overflow: 'hidden',
+            }
           ]}
         >
           <ScrollView
-            style={styles.scrollView}
             contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]}
             showsVerticalScrollIndicator={false}
           >
@@ -356,30 +332,35 @@ export const MainDashboard: React.FC = () => {
                 <AssistantCard mode={mode} onSwitchMode={handleSwitchMode} />
               </View>
 
-              {/* Quick Actions Horizontal Scroll */}
+              {/* Quick Actions */}
               <View style={styles.quickActionsSection}>
                 <Text style={[styles.sectionTitle, { color: theme.colors.utility.primaryText }]}>
                   Quick Actions
                 </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
                   <TouchableOpacity
                     style={[styles.quickActionButton, { backgroundColor: theme.colors.brand.primary }]}
-                    onPress={() => setShowQuickActions(true)}
+                    onPress={() => navigation.navigate('AddAsset')}
                   >
-                     <MaterialCommunityIcons name="plus" size={24} color="#FFF" />
-                     <Text style={[styles.quickActionText, { color: '#FFF' }]}>Add Asset</Text>
+                    <MaterialCommunityIcons name="plus" size={20} color="#FFF" />
+                    <Text style={styles.quickActionTextLight}>Add Entity</Text>
                   </TouchableOpacity>
-
                   <TouchableOpacity
                     style={[styles.quickActionButton, { backgroundColor: theme.colors.utility.secondaryBackground }]}
                   >
-                     <MaterialCommunityIcons name="file-upload-outline" size={24} color={theme.colors.brand.secondary} />
-                     <Text style={[styles.quickActionText, { color: theme.colors.utility.primaryText }]}>Upload</Text>
+                    <MaterialCommunityIcons name="file-upload-outline" size={20} color={theme.colors.utility.primaryText} />
+                    <Text style={[styles.quickActionText, { color: theme.colors.utility.primaryText }]}>Upload</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.quickActionButton, { backgroundColor: theme.colors.utility.secondaryBackground }]}
+                  >
+                    <MaterialCommunityIcons name="qrcode-scan" size={20} color={theme.colors.utility.primaryText} />
+                    <Text style={[styles.quickActionText, { color: theme.colors.utility.primaryText }]}>Scan</Text>
                   </TouchableOpacity>
                 </ScrollView>
               </View>
 
-              {/* Main Grid - All Feature Cards */}
+              {/* Live Overview Grid */}
               <View style={styles.gridSection}>
                 <Text style={[styles.sectionTitle, { color: theme.colors.utility.primaryText }]}>
                   Overview
@@ -397,40 +378,38 @@ export const MainDashboard: React.FC = () => {
           </ScrollView>
         </Animated.View>
 
-        {/* AI MODE LAYER */}
+        {/* --- LAYER 2: CHAT (Sliding Up as Bottom Sheet) --- */}
         <Animated.View
           style={[
             styles.chatLayer,
             {
-              opacity: chatOpacity,
-              backgroundColor: theme.colors.utility.primaryBackground,
-              paddingTop: insets.top,
+              transform: [{ translateY: chatSlideAnim }],
+              backgroundColor: theme.mode === 'dark' ? 'rgba(30, 41, 59, 0.98)' : 'rgba(255, 255, 255, 0.98)',
             }
           ]}
           pointerEvents={isAIMode ? 'auto' : 'none'}
         >
-          {/* AI Mode Header - Dashboard Style */}
-          <View style={[styles.aiHeader, { backgroundColor: theme.colors.utility.primaryBackground }]}>
-            <View style={styles.aiHeaderContent}>
-              {/* Left: Icon with glow effect */}
-              <View style={[styles.aiIconContainer, { backgroundColor: theme.colors.brand.primary + '15' }]}>
-                <View style={[styles.aiIconGlow, { backgroundColor: theme.colors.brand.primary + '30' }]} />
-                <MaterialCommunityIcons name="robot-happy" size={28} color={theme.colors.brand.primary} />
-              </View>
+          {/* Drag Handle */}
+          <TouchableOpacity onPress={handleSwitchMode} style={styles.chatHandle} activeOpacity={0.8}>
+            <View style={[styles.handleBar, { backgroundColor: theme.colors.utility.secondaryText + '40' }]} />
+          </TouchableOpacity>
 
-              {/* Center: Greeting & Subtitle */}
-              <View style={styles.aiHeaderText}>
-                <Text style={[styles.aiGreeting, { color: theme.colors.utility.primaryText }]}>
+          {/* Chat Header */}
+          <View style={[styles.chatHeader, { borderBottomColor: theme.colors.utility.secondaryText + '15' }]}>
+            <View style={styles.chatHeaderContent}>
+              <View style={[styles.aiIconContainer, { backgroundColor: theme.colors.brand.primary + '15' }]}>
+                <MaterialCommunityIcons name="robot-happy" size={24} color={theme.colors.brand.primary} />
+              </View>
+              <View style={styles.chatHeaderText}>
+                <Text style={[styles.chatTitle, { color: theme.colors.utility.primaryText }]}>
                   Hi Kamal
                 </Text>
-                <Text style={[styles.aiSubtitle, { color: theme.colors.utility.secondaryText }]}>
+                <Text style={[styles.chatSubtitle, { color: theme.colors.utility.secondaryText }]}>
                   How can I help you today?
                 </Text>
               </View>
-
-              {/* Right: Close button */}
               <TouchableOpacity
-                style={[styles.aiCloseButton, { backgroundColor: theme.colors.utility.secondaryBackground }]}
+                style={[styles.closeButton, { backgroundColor: theme.colors.utility.secondaryBackground }]}
                 onPress={handleSwitchMode}
               >
                 <MaterialCommunityIcons name="close" size={20} color={theme.colors.utility.secondaryText} />
@@ -438,18 +417,11 @@ export const MainDashboard: React.FC = () => {
             </View>
           </View>
 
-          {/* Chat Content - Takes remaining space */}
+          {/* Chat Content */}
           <View style={styles.chatContent}>
             <ChatModeContent userName="Kamal" />
           </View>
         </Animated.View>
-
-        {/* Quick Action Card Modal */}
-        <QuickActionCard
-          visible={showQuickActions}
-          onClose={() => setShowQuickActions(false)}
-          actions={defaultQuickActions}
-        />
       </View>
     </MainLayout>
   );
@@ -460,19 +432,11 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: 'hidden',
   },
+
+  // --- DASHBOARD LAYER ---
   dashboardLayer: {
     flex: 1,
     zIndex: 1,
-  },
-  chatLayer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 65, // Above tab bar
-  },
-  scrollView: {
-    flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -510,31 +474,30 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     letterSpacing: -0.3,
   },
+
+  // Quick Actions
   quickActionsSection: {
     marginBottom: 28,
-  },
-  horizontalScroll: {
-    flexDirection: 'row',
-    overflow: 'visible',
   },
   quickActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     borderRadius: 30,
-    marginRight: 12,
     gap: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
   },
   quickActionText: {
     fontWeight: '600',
     fontSize: 14,
   },
+  quickActionTextLight: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: '#FFF',
+  },
+
+  // Grid
   gridSection: {
     marginBottom: 28,
   },
@@ -546,10 +509,9 @@ const styles = StyleSheet.create({
   card: {
     width: (SCREEN_WIDTH - 52) / 2,
     padding: 16,
-    borderRadius: 24,
-    minHeight: 140,
+    borderRadius: 20,
+    minHeight: 120,
     justifyContent: 'space-between',
-    elevation: 0,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -563,69 +525,83 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  arrowContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    opacity: 0.6,
-  },
-  cardContent: {
-    gap: 4,
-  },
   cardTitle: {
-    fontSize: 17,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 12,
+  },
+
+  // Live Status Badges
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  badgeText: {
+    fontSize: 11,
     fontWeight: '700',
   },
-  cardDescription: {
-    fontSize: 13,
-    opacity: 0.7,
-  },
+
   collaboratorSection: {
     marginBottom: 30,
   },
-  // AI Mode Header Styles
-  aiHeader: {
+
+  // --- CHAT LAYER (Bottom Sheet) ---
+  chatLayer: {
+    position: 'absolute',
+    top: 50, // Gap at top to see receded dashboard
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 24,
+    zIndex: 10,
+  },
+  chatHandle: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    width: '100%',
+  },
+  handleBar: {
+    width: 40,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  chatHeader: {
     paddingHorizontal: 20,
-    paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
-  aiHeaderContent: {
+  chatHeaderContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   aiIconContainer: {
-    width: 52,
-    height: 52,
+    width: 48,
+    height: 48,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
   },
-  aiIconGlow: {
-    position: 'absolute',
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    opacity: 0.5,
-  },
-  aiHeaderText: {
+  chatHeaderText: {
     flex: 1,
-    marginLeft: 14,
+    marginLeft: 12,
   },
-  aiGreeting: {
-    fontSize: 20,
+  chatTitle: {
+    fontSize: 18,
     fontWeight: '700',
-    letterSpacing: -0.3,
   },
-  aiSubtitle: {
-    fontSize: 14,
+  chatSubtitle: {
+    fontSize: 13,
     marginTop: 2,
   },
-  aiCloseButton: {
+  closeButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
