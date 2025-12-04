@@ -1,161 +1,95 @@
 // src/features/auth/screens/LoginScreen.tsx
+// Floating Glass Portal - Seamless transition from Story Onboarding
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   Dimensions,
   StatusBar,
-  Image,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   Animated,
   Easing,
 } from 'react-native';
-import { useTheme } from '../../../theme/ThemeContext';
+import { Text } from '@rneui/themed';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../../navigation/types';
 import { GoogleIcon } from '../components/GoogleIcon';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width, height } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-type LoginScreenNavigationProp = NativeStackNavigationProp<
-  AuthStackParamList,
-  'Login'
->;
-
+type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 type LoginScreenRouteProp = RouteProp<AuthStackParamList, 'Login'>;
 
-// Animated Button Component
-const AnimatedButton = ({ children, onPress, style, disabled }: any) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.96,
-      useNativeDriver: true,
-      speed: 20,
-      bounciness: 4,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      speed: 20,
-      bounciness: 4,
-    }).start();
-  };
-
-  return (
-    <TouchableOpacity
-      activeOpacity={1}
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      disabled={disabled}
-    >
-      <Animated.View style={[style, { transform: [{ scale: scaleAnim }] }]}>
-        {children}
-      </Animated.View>
-    </TouchableOpacity>
-  );
-};
-
 export const LoginScreen: React.FC = () => {
-  const { theme } = useTheme();
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const route = useRoute<LoginScreenRouteProp>();
+  const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Extract prefill data from StoryOnboarding
+  // DATA BRIDGE: Receive from StoryOnboarding
   const { userName, familyName } = route.params || {};
 
-  // Animation values
+  // Entrance animations
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.8)).current;
-  const brandOpacity = useRef(new Animated.Value(0)).current;
-  const brandTranslateY = useRef(new Animated.Value(20)).current;
-  const taglineOpacity = useRef(new Animated.Value(0)).current;
-  const descriptionOpacity = useRef(new Animated.Value(0)).current;
-  const bottomSectionTranslateY = useRef(new Animated.Value(50)).current;
-  const bottomSectionOpacity = useRef(new Animated.Value(0)).current;
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+  const cardTranslateY = useRef(new Animated.Value(40)).current;
+  const footerOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Staggered entrance animations
+    // Staggered entrance animation
     Animated.sequence([
-      // Logo entrance
+      // Logo first
       Animated.parallel([
-        Animated.spring(logoScale, {
-          toValue: 1,
-          friction: 5,
-          tension: 40,
-          useNativeDriver: true,
-        }),
         Animated.timing(logoOpacity, {
           toValue: 1,
-          duration: 500,
-          easing: Easing.out(Easing.cubic),
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(logoScale, {
+          toValue: 1,
+          friction: 6,
+          tension: 40,
           useNativeDriver: true,
         }),
       ]),
-      // Brand name
+      // Then the glass card
       Animated.parallel([
-        Animated.timing(brandOpacity, {
+        Animated.timing(cardOpacity, {
           toValue: 1,
           duration: 400,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
-        Animated.spring(brandTranslateY, {
+        Animated.spring(cardTranslateY, {
           toValue: 0,
           friction: 8,
           tension: 40,
           useNativeDriver: true,
         }),
       ]),
-      // Tagline
-      Animated.timing(taglineOpacity, {
+      // Finally footer
+      Animated.timing(footerOpacity, {
         toValue: 1,
         duration: 300,
-        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      // Description
-      Animated.timing(descriptionOpacity, {
-        toValue: 1,
-        duration: 300,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      // Bottom section
-      Animated.parallel([
-        Animated.timing(bottomSectionOpacity, {
-          toValue: 1,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.spring(bottomSectionTranslateY, {
-          toValue: 0,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]),
     ]).start();
   }, []);
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      // TODO: Implement Google Sign-In
+      // Mock Login Delay
       setTimeout(() => {
-        // Pass prefill data forward to PhoneAuth
+        // DATA BRIDGE: Pass forward to PhoneAuth
         navigation.replace('PhoneAuth' as any, {
           isFromSettings: false,
           prefillName: userName,
@@ -168,309 +102,345 @@ export const LoginScreen: React.FC = () => {
     }
   };
 
+  const handlePhoneLogin = () => {
+    // Direct to phone auth without Google
+    navigation.replace('PhoneAuth' as any, {
+      isFromSettings: false,
+      prefillName: userName,
+      prefillFamily: familyName,
+    });
+  };
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <StatusBar backgroundColor={theme.colors.utility.primaryText} barStyle="light-content" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
 
-      {/* Top Section - Dark Background */}
-      <View style={[styles.topSection, { backgroundColor: theme.colors.utility.primaryText }]}>
-        {/* Decorative circles */}
-        <View style={[styles.decorCircle, styles.decorCircle1, { backgroundColor: theme.colors.brand.primary + '15' }]} />
-        <View style={[styles.decorCircle, styles.decorCircle2, { backgroundColor: theme.colors.brand.primary + '10' }]} />
+      {/* IMMERSIVE BACKGROUND - Matches Story Onboarding */}
+      <LinearGradient
+        colors={['#0F172A', '#1E293B', '#0F172A']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
 
-        <View style={styles.topContent}>
-          {/* Logo */}
-          <Animated.View
+      {/* Stars Background */}
+      <View style={styles.starsContainer}>
+        {[...Array(30)].map((_, i) => (
+          <View
+            key={i}
             style={[
-              styles.logoContainer,
+              styles.star,
               {
-                opacity: logoOpacity,
-                transform: [{ scale: logoScale }],
-              },
+                left: Math.random() * SCREEN_WIDTH,
+                top: Math.random() * SCREEN_HEIGHT,
+                opacity: 0.15 + Math.random() * 0.35,
+                width: 1 + Math.random() * 2,
+                height: 1 + Math.random() * 2,
+              }
             ]}
-          >
-            <View style={[styles.logoWrapper, { backgroundColor: theme.colors.utility.secondaryBackground }]}>
-              <Image
-                source={require('../../../../assets/images/family-knows-logo.png')}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            </View>
-          </Animated.View>
-
-          {/* Brand Name */}
-          <Animated.Text
-            style={[
-              styles.brandName,
-              {
-                color: theme.colors.utility.secondaryBackground,
-                opacity: brandOpacity,
-                transform: [{ translateY: brandTranslateY }],
-              },
-            ]}
-          >
-            FamilyKnows
-          </Animated.Text>
-
-          {/* Tagline */}
-          <Animated.Text
-            style={[
-              styles.tagline,
-              {
-                color: theme.colors.accent.accent4,
-                opacity: taglineOpacity,
-              },
-            ]}
-          >
-            Handcrafted in India
-          </Animated.Text>
-
-          {/* Description */}
-          <Animated.Text
-            style={[
-              styles.description,
-              {
-                color: theme.colors.utility.secondaryBackground,
-                opacity: descriptionOpacity,
-              },
-            ]}
-          >
-            A personal assistant service for making{'\n'}your life easier & productive
-          </Animated.Text>
-        </View>
+          />
+        ))}
       </View>
 
-      {/* Bottom Section - Light Background with curved top */}
-      <Animated.View
-        style={[
-          styles.bottomSection,
-          {
-            backgroundColor: theme.colors.utility.secondaryBackground,
-            opacity: bottomSectionOpacity,
-            transform: [{ translateY: bottomSectionTranslateY }],
-          },
-        ]}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.content}
       >
-        {/* Curved top overlay */}
-        <View style={[styles.curvedTop, { backgroundColor: theme.colors.utility.secondaryBackground }]} />
-
-        {/* Login Button */}
-        <AnimatedButton
+        {/* LOGO SECTION */}
+        <Animated.View
           style={[
-            styles.googleButton,
-            { backgroundColor: theme.colors.brand.primary },
-            isLoading && styles.disabledButton,
+            styles.headerSection,
+            {
+              opacity: logoOpacity,
+              transform: [{ scale: logoScale }],
+              paddingTop: insets.top + 40,
+            }
           ]}
-          onPress={handleGoogleLogin}
-          disabled={isLoading}
         >
-          {isLoading ? (
-            <ActivityIndicator color={theme.colors.utility.secondaryBackground} />
-          ) : (
-            <>
-              <View style={styles.googleIconWrapper}>
-                <GoogleIcon size={22} color={theme.colors.utility.secondaryBackground} />
-              </View>
-              <Text style={[styles.buttonText, { color: theme.colors.utility.secondaryBackground }]}>
-                Continue with Google
-              </Text>
-            </>
-          )}
-        </AnimatedButton>
+          <View style={styles.logoBubble}>
+            <View style={styles.logoGlow} />
+            <MaterialCommunityIcons name="shield-home" size={32} color="#4ADE80" />
+          </View>
+          <Text style={styles.appName}>FamilyKnows</Text>
+          <Text style={styles.tagline}>Your Family's Digital Vault</Text>
+        </Animated.View>
 
-        {/* Divider */}
-        <View style={styles.dividerContainer}>
-          <View style={[styles.divider, { backgroundColor: theme.colors.utility.secondaryText + '30' }]} />
-          <Text style={[styles.dividerText, { color: theme.colors.utility.secondaryText }]}>or</Text>
-          <View style={[styles.divider, { backgroundColor: theme.colors.utility.secondaryText + '30' }]} />
-        </View>
-
-        {/* Other login options placeholder */}
-        <TouchableOpacity
-          style={[styles.secondaryButton, { borderColor: theme.colors.utility.secondaryText + '40' }]}
-          activeOpacity={0.7}
+        {/* GLASSMORPHIC LOGIN CARD */}
+        <Animated.View
+          style={[
+            styles.glassCard,
+            {
+              opacity: cardOpacity,
+              transform: [{ translateY: cardTranslateY }],
+            }
+          ]}
         >
-          <Text style={[styles.secondaryButtonText, { color: theme.colors.utility.primaryText }]}>
-            Sign in with Phone Number
-          </Text>
-        </TouchableOpacity>
+          {/* Personalized Greeting */}
+          <View style={styles.welcomeContainer}>
+            <Text style={styles.welcomeTitle}>
+              {userName ? `Welcome, ${userName}` : 'Welcome Back'}
+            </Text>
+            <Text style={styles.welcomeSub}>
+              {familyName
+                ? `Let's secure the ${familyName} legacy.`
+                : "Your family's digital vault awaits."}
+            </Text>
+          </View>
 
-        {/* Terms */}
-        <View style={styles.termsContainer}>
-          <Text style={[styles.termsText, { color: theme.colors.utility.secondaryText }]}>
+          <View style={styles.divider} />
+
+          {/* Google Login Button */}
+          <TouchableOpacity
+            style={[styles.googleButton, isLoading && styles.buttonLoading]}
+            onPress={handleGoogleLogin}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#0F172A" />
+            ) : (
+              <>
+                <GoogleIcon size={22} color="#0F172A" />
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* Or Divider */}
+          <View style={styles.orContainer}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>or</Text>
+            <View style={styles.orLine} />
+          </View>
+
+          {/* Phone Login Button */}
+          <TouchableOpacity
+            style={styles.phoneButton}
+            onPress={handlePhoneLogin}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="phone" size={20} color="#FFF" />
+            <Text style={styles.phoneButtonText}>Sign in with Phone</Text>
+          </TouchableOpacity>
+
+          {/* Trust Signal */}
+          <View style={styles.trustRow}>
+            <MaterialCommunityIcons name="shield-check" size={14} color="#4ADE80" />
+            <Text style={styles.trustText}>Bank-grade Encryption</Text>
+          </View>
+        </Animated.View>
+
+        {/* FOOTER */}
+        <Animated.View
+          style={[
+            styles.footer,
+            {
+              opacity: footerOpacity,
+              paddingBottom: insets.bottom + 20,
+            }
+          ]}
+        >
+          <Text style={styles.termsText}>
             By continuing, you agree to our{' '}
-          </Text>
-          <TouchableOpacity>
-            <Text style={[styles.linkText, { color: theme.colors.brand.primary }]}>
-              Terms
-            </Text>
-          </TouchableOpacity>
-          <Text style={[styles.termsText, { color: theme.colors.utility.secondaryText }]}>
+            <Text style={styles.termsLink}>Terms</Text>
             {' '}and{' '}
+            <Text style={styles.termsLink}>Privacy Policy</Text>
           </Text>
-          <TouchableOpacity>
-            <Text style={[styles.linkText, { color: theme.colors.brand.primary }]}>
-              Privacy Policy
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
-    </KeyboardAvoidingView>
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#0F172A',
   },
-  topSection: {
-    flex: 0.58,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-    overflow: 'hidden',
+  starsContainer: {
+    ...StyleSheet.absoluteFillObject,
   },
-  decorCircle: {
+  star: {
     position: 'absolute',
-    borderRadius: 999,
+    backgroundColor: '#FFF',
+    borderRadius: 2,
   },
-  decorCircle1: {
-    width: width * 0.8,
-    height: width * 0.8,
-    top: -width * 0.2,
-    right: -width * 0.2,
-  },
-  decorCircle2: {
-    width: width * 0.6,
-    height: width * 0.6,
-    bottom: -width * 0.1,
-    left: -width * 0.2,
-  },
-  topContent: {
+  content: {
+    flex: 1,
+    justifyContent: 'space-between',
     alignItems: 'center',
-    zIndex: 1,
+    paddingHorizontal: 24,
   },
-  logoContainer: {
-    marginBottom: 20,
+
+  // Header / Logo Section
+  headerSection: {
+    alignItems: 'center',
   },
-  logoWrapper: {
-    width: 100,
-    height: 100,
-    borderRadius: 24,
+  logoBubble: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    backgroundColor: 'rgba(74, 222, 128, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  logo: {
-    width: 70,
-    height: 70,
-  },
-  brandName: {
-    fontSize: 32,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-    marginBottom: 12,
-  },
-  tagline: {
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    marginBottom: 24,
-  },
-  description: {
-    fontSize: 17,
-    fontWeight: '400',
-    textAlign: 'center',
-    lineHeight: 26,
-    opacity: 0.9,
-  },
-  bottomSection: {
-    flex: 0.42,
-    paddingHorizontal: 30,
-    paddingTop: 40,
-    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(74, 222, 128, 0.2)',
     position: 'relative',
   },
-  curvedTop: {
+  logoGlow: {
     position: 'absolute',
-    top: -30,
-    left: 0,
-    right: 0,
-    height: 60,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(74, 222, 128, 0.08)',
   },
+  appName: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#FFF',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  tagline: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.5)',
+    fontWeight: '500',
+  },
+
+  // Glass Card
+  glassCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: 'rgba(30, 41, 59, 0.75)',
+    borderRadius: 28,
+    padding: 32,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  welcomeContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  welcomeTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFF',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  welcomeSub: {
+    fontSize: 15,
+    color: '#94A3B8',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  divider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginBottom: 24,
+  },
+
+  // Google Button
   googleButton: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FFF',
     paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 30,
-    width: '100%',
+    borderRadius: 16,
+    marginBottom: 16,
+    gap: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 4,
   },
-  disabledButton: {
-    opacity: 0.7,
+  buttonLoading: {
+    opacity: 0.8,
   },
-  googleIconWrapper: {
-    marginRight: 12,
-  },
-  buttonText: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    marginVertical: 24,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    paddingHorizontal: 16,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  secondaryButton: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 30,
-    borderWidth: 1.5,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
+  googleButtonText: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#0F172A',
   },
-  termsContainer: {
+
+  // Or Divider
+  orContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 16,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  orText: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 13,
+    fontWeight: '500',
+    paddingHorizontal: 16,
+  },
+
+  // Phone Button
+  phoneButton: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 24,
-    paddingHorizontal: 20,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingVertical: 16,
+    borderRadius: 16,
+    marginBottom: 20,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  phoneButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+
+  // Trust Signal
+  trustRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(74, 222, 128, 0.08)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  trustText: {
+    color: '#4ADE80',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // Footer
+  footer: {
+    paddingHorizontal: 40,
   },
   termsText: {
+    color: 'rgba(255,255,255,0.35)',
     fontSize: 12,
+    textAlign: 'center',
     lineHeight: 18,
   },
-  linkText: {
-    fontSize: 12,
+  termsLink: {
+    color: 'rgba(255,255,255,0.5)',
     fontWeight: '600',
   },
 });
