@@ -1,6 +1,6 @@
 // src/features/assets/screens/AssetDashboardScreen.tsx
 // Unified Entity Dashboard - Adapts to Assets, Insurance, Health, Documents
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Text, Button } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
+import { useFamily } from '../../../context/FamilyContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -29,7 +30,11 @@ const CATEGORY_CONFIG: { [key: string]: { color: string; icon: string; headerLab
   identity: { color: '#6B7280', icon: 'passport', headerLabel: 'Document Details' },
 };
 
+// --- ROLE TYPES FOR LINKED MEMBERS ---
+type LinkedMemberRole = 'owner' | 'patient' | 'policyholder' | 'covered' | 'holder' | 'primary' | 'caregiver' | 'co-owner';
+
 // --- UNIFIED MOCK DATA ---
+// Now with linkedMemberId instead of hardcoded names
 const UNIFIED_DATA: { [key: string]: any } = {
   // INSURANCE
   'ins-1': {
@@ -39,6 +44,9 @@ const UNIFIED_DATA: { [key: string]: any } = {
     meta: 'Family Floater • Cover: ₹50L',
     image: 'https://placehold.co/100x100/8B5CF6/ffffff?text=HDFC',
     headerInfo: { label1: 'Policy No', value1: 'HEG-2024-778899', label2: 'Valid Until', value2: '12 Dec 2025' },
+    isShared: true, // Family floater covers everyone
+    linkedMemberId: 'member-1', // Dad is policyholder
+    linkedMemberRole: 'policyholder' as LinkedMemberRole,
     cycles: [
       { id: 'c1', title: 'Annual Premium', frequency: 'Yearly', lastDone: '12 Dec 2024', nextDue: '12 Dec 2025', status: 'ok', instructions: 'Pay premium before due date to avoid lapse.' },
       { id: 'c2', title: 'Health Checkup Benefit', frequency: 'Yearly', lastDone: 'Not Used', nextDue: 'Before Dec 2025', status: 'warning', instructions: 'Free annual health checkup included. Book at network hospital.' },
@@ -52,19 +60,51 @@ const UNIFIED_DATA: { [key: string]: any } = {
       { id: 'd1', name: 'Policy Document.pdf', type: 'pdf', date: '12 Dec 2024' },
       { id: 'd2', name: 'Cashless Network List.pdf', type: 'pdf', date: '12 Dec 2024' },
     ],
+    // Family access now uses member IDs
     familyAccess: [
-      { id: 'f1', name: 'Kamal', avatar: 'https://i.pravatar.cc/150?u=dad', role: 'Policyholder' },
-      { id: 'f2', name: 'Priya', avatar: 'https://i.pravatar.cc/150?u=mom', role: 'Covered' },
+      { memberId: 'member-1', role: 'Policyholder' },
+      { memberId: 'member-2', role: 'Covered' },
+      { memberId: 'member-3', role: 'Covered' },
+      { memberId: 'member-4', role: 'Covered' },
+      { memberId: 'member-5', role: 'Covered' },
+    ],
+  },
+  'ins-2': {
+    id: 'ins-2',
+    category: 'protection',
+    name: 'LIC Term Plan',
+    meta: 'Cover: ₹1Cr',
+    image: 'https://placehold.co/100x100/8B5CF6/ffffff?text=LIC',
+    headerInfo: { label1: 'Policy No', value1: 'LIC-2020-445566', label2: 'Valid Until', value2: '15 Mar 2025' },
+    isShared: false,
+    linkedMemberId: 'member-1', // Dad
+    linkedMemberRole: 'policyholder' as LinkedMemberRole,
+    cycles: [
+      { id: 'c1', title: 'Annual Premium', frequency: 'Yearly', lastDone: '15 Mar 2024', nextDue: '15 Mar 2025', status: 'ok', instructions: 'Pay LIC premium at branch or online.' },
+    ],
+    amc: null,
+    cot: [
+      { id: '1', name: 'LIC Agent Sharma', type: 'pro', phone: '9876543211', role: 'LIC Agent', rating: 4.5 },
+    ],
+    documents: [
+      { id: 'd1', name: 'LIC Policy.pdf', type: 'pdf', date: '15 Mar 2020' },
+    ],
+    familyAccess: [
+      { memberId: 'member-1', role: 'Policyholder' },
+      { memberId: 'member-2', role: 'Nominee' },
     ],
   },
   // HEALTH / WELLNESS
   'health-1': {
     id: 'health-1',
     category: 'wellness',
-    name: 'Dad\'s Cardiac Care',
+    name: 'Cardiac Care', // Generic title - will show as "Dad's Cardiac Care"
     meta: 'Dr. Rao • Apollo Hospital',
     image: 'https://placehold.co/100x100/EF4444/ffffff?text=❤️',
-    headerInfo: { label1: 'Patient', value1: 'Kamal (Dad)', label2: 'Condition', value2: 'Hypertension' },
+    headerInfo: { label1: 'Condition', value1: 'Hypertension', label2: 'Since', value2: '2019' },
+    isShared: false,
+    linkedMemberId: 'member-1', // Dad
+    linkedMemberRole: 'patient' as LinkedMemberRole,
     cycles: [
       { id: 'c1', title: 'Cardiologist Visit', frequency: 'Every 6 Months', lastDone: '15 May 2024', nextDue: '15 Nov 2024', status: 'warning', instructions: 'Book appointment with Dr. Rao at Apollo. Carry previous reports.' },
       { id: 'c2', title: 'Lipid Profile Test', frequency: 'Every 3 Months', lastDone: '01 Sep 2024', nextDue: '01 Dec 2024', status: 'ok', instructions: 'Fasting blood test. Book at any network lab.' },
@@ -80,7 +120,34 @@ const UNIFIED_DATA: { [key: string]: any } = {
       { id: 'd2', name: 'Prescription - Nov 2024.pdf', type: 'pdf', date: '01 Nov 2024' },
     ],
     familyAccess: [
-      { id: 'f1', name: 'Priya', avatar: 'https://i.pravatar.cc/150?u=mom', role: 'Caregiver' },
+      { memberId: 'member-1', role: 'Patient' },
+      { memberId: 'member-2', role: 'Caregiver' },
+    ],
+  },
+  'health-2': {
+    id: 'health-2',
+    category: 'wellness',
+    name: 'Thyroid Management', // Will show as "Mom's Thyroid Management"
+    meta: 'Dr. Sharma • Endocrinologist',
+    image: 'https://placehold.co/100x100/EF4444/ffffff?text=🩺',
+    headerInfo: { label1: 'Condition', value1: 'Hypothyroidism', label2: 'Since', value2: '2021' },
+    isShared: false,
+    linkedMemberId: 'member-2', // Mom
+    linkedMemberRole: 'patient' as LinkedMemberRole,
+    cycles: [
+      { id: 'c1', title: 'TSH Test', frequency: 'Every 3 Months', lastDone: '20 Oct 2024', nextDue: '20 Jan 2025', status: 'ok', instructions: 'Morning fasting test. Book at any lab.' },
+      { id: 'c2', title: 'Endocrinologist Visit', frequency: 'Every 6 Months', lastDone: '15 Aug 2024', nextDue: '15 Feb 2025', status: 'ok', instructions: 'Carry latest TSH reports.' },
+    ],
+    amc: null,
+    cot: [
+      { id: '1', name: 'Dr. Sharma', type: 'pro', phone: '9876543212', role: 'Endocrinologist', rating: 4.7 },
+    ],
+    documents: [
+      { id: 'd1', name: 'TSH Report - Oct 2024.pdf', type: 'pdf', date: '20 Oct 2024' },
+    ],
+    familyAccess: [
+      { memberId: 'member-2', role: 'Patient' },
+      { memberId: 'member-1', role: 'Caregiver' },
     ],
   },
   // ELECTRONICS
@@ -91,6 +158,8 @@ const UNIFIED_DATA: { [key: string]: any } = {
     meta: 'AMC Active • Utility Area',
     image: 'https://rukminim2.flixcart.com/image/850/1000/xif0q/inverter/y/i/n/-original-imagqhyq9g5g5z8h.jpeg?q=90',
     headerInfo: { label1: 'Purchased', value1: '15 Apr 2022', label2: 'Warranty', value2: '15 Apr 2027' },
+    isShared: true, // Family shared appliance
+    linkedMemberId: null,
     cycles: [
       { id: 'c1', title: 'Distilled Water Refill', frequency: 'Every 6 Months', lastDone: '10 Apr 2024', nextDue: '10 Oct 2024', status: 'overdue', instructions: 'Open battery caps, add distilled water up to max line.' },
       { id: 'c2', title: 'Battery Health Check', frequency: 'Yearly', lastDone: '10 Apr 2024', nextDue: '10 Apr 2025', status: 'ok', instructions: 'Check voltage levels, inspect terminals.' },
@@ -114,7 +183,31 @@ const UNIFIED_DATA: { [key: string]: any } = {
       { id: 'd3', name: 'AMC Contract.pdf', type: 'pdf', date: '12 Dec 2023' },
     ],
     familyAccess: [
-      { id: 'f1', name: 'Kamal', avatar: 'https://i.pravatar.cc/150?u=dad', role: 'Owner' },
+      { memberId: 'member-1', role: 'Owner' },
+    ],
+  },
+  'elec-2': {
+    id: 'elec-2',
+    category: 'electronics',
+    name: 'Samsung Washing Machine',
+    meta: 'Warranty till Mar 2026',
+    image: 'https://images.samsung.com/is/image/samsung/p6pim/in/ww80t4020ce1tl/gallery/in-front-loading-washer-ww80t4020ce1tl-ww80t4020ce-tl-532860477?$684_547_PNG$',
+    headerInfo: { label1: 'Purchased', value1: '10 Mar 2024', label2: 'Warranty', value2: '10 Mar 2026' },
+    isShared: false,
+    linkedMemberId: 'member-2', // Mom (primary user)
+    linkedMemberRole: 'primary' as LinkedMemberRole,
+    cycles: [
+      { id: 'c1', title: 'Drum Cleaning', frequency: 'Monthly', lastDone: '01 Nov 2024', nextDue: '01 Dec 2024', status: 'ok', instructions: 'Run drum cleaning cycle with no clothes.' },
+    ],
+    amc: null,
+    cot: [
+      { id: '1', name: 'Samsung Service', type: 'pro', phone: '1800-40-7267864', role: 'Authorized Service' },
+    ],
+    documents: [
+      { id: 'd1', name: 'Purchase Invoice.pdf', type: 'pdf', date: '10 Mar 2024' },
+    ],
+    familyAccess: [
+      { memberId: 'member-2', role: 'Primary User' },
     ],
   },
   // VEHICLE
@@ -125,6 +218,9 @@ const UNIFIED_DATA: { [key: string]: any } = {
     meta: 'KA-01-MJ-1234 • 45,000 km',
     image: 'https://imgd.aeplcdn.com/664x374/n/cw/ec/142739/safari-exterior-right-front-three-quarter-2.jpeg?isig=0&q=80',
     headerInfo: { label1: 'Reg. No', value1: 'KA-01-MJ-1234', label2: 'Insurance', value2: '10 Jan 2025' },
+    isShared: false,
+    linkedMemberId: 'member-1', // Dad
+    linkedMemberRole: 'owner' as LinkedMemberRole,
     cycles: [
       { id: 'c1', title: 'General Service', frequency: 'Every 10,000 km', lastDone: '15 Aug 2024', nextDue: '15 Nov 2024', status: 'warning', instructions: 'Book service at Tata authorized center.' },
       { id: 'c2', title: 'Insurance Renewal', frequency: 'Yearly', lastDone: '10 Jan 2024', nextDue: '10 Jan 2025', status: 'ok', instructions: 'Compare and renew insurance.' },
@@ -139,7 +235,32 @@ const UNIFIED_DATA: { [key: string]: any } = {
       { id: 'd2', name: 'Insurance Policy.pdf', type: 'pdf', date: '10 Jan 2024' },
     ],
     familyAccess: [
-      { id: 'f1', name: 'Kamal', avatar: 'https://i.pravatar.cc/150?u=dad', role: 'Owner' },
+      { memberId: 'member-1', role: 'Owner' },
+    ],
+  },
+  'veh-2': {
+    id: 'veh-2',
+    category: 'mobility',
+    name: 'Honda Activa',
+    meta: 'KA-01-AB-5678',
+    image: 'https://bd.gaadicdn.com/processedimages/honda/activa-6g/640X309/activa-6g6543d1fd2c9a.jpg',
+    headerInfo: { label1: 'Reg. No', value1: 'KA-01-AB-5678', label2: 'Insurance', value2: '15 Dec 2024' },
+    isShared: false,
+    linkedMemberId: 'member-2', // Mom
+    linkedMemberRole: 'owner' as LinkedMemberRole,
+    cycles: [
+      { id: 'c1', title: 'Insurance Renewal', frequency: 'Yearly', lastDone: '15 Dec 2023', nextDue: '15 Dec 2024', status: 'warning', instructions: 'Renew insurance before expiry.' },
+      { id: 'c2', title: 'Service', frequency: 'Every 3,000 km', lastDone: '01 Oct 2024', nextDue: '01 Jan 2025', status: 'ok', instructions: 'Book at Honda authorized service.' },
+    ],
+    amc: null,
+    cot: [
+      { id: '1', name: 'Honda Service', type: 'pro', phone: '1800-103-3434', role: 'Authorized Service' },
+    ],
+    documents: [
+      { id: 'd1', name: 'RC Book.pdf', type: 'pdf', date: '15 Dec 2022' },
+    ],
+    familyAccess: [
+      { memberId: 'member-2', role: 'Owner' },
     ],
   },
   // PROPERTY
@@ -150,6 +271,8 @@ const UNIFIED_DATA: { [key: string]: any } = {
     meta: 'Owned • Dream Home',
     image: 'https://placehold.co/100x100/4F46E5/ffffff?text=🏠',
     headerInfo: { label1: 'Type', value1: 'Apartment', label2: 'Since', value2: '2019' },
+    isShared: true, // Family property
+    linkedMemberId: null,
     cycles: [
       { id: 'c1', title: 'Property Tax', frequency: 'Yearly', lastDone: 'Mar 2024', nextDue: 'Mar 2025', status: 'ok', instructions: 'Pay BBMP property tax online.' },
       { id: 'c2', title: 'Society Maintenance', frequency: 'Quarterly', lastDone: 'Oct 2024', nextDue: 'Jan 2025', status: 'ok', instructions: 'Pay to association account.' },
@@ -163,8 +286,8 @@ const UNIFIED_DATA: { [key: string]: any } = {
       { id: 'd2', name: 'Property Tax Receipt.pdf', type: 'pdf', date: 'Mar 2024' },
     ],
     familyAccess: [
-      { id: 'f1', name: 'Kamal', avatar: 'https://i.pravatar.cc/150?u=dad', role: 'Owner' },
-      { id: 'f2', name: 'Priya', avatar: 'https://i.pravatar.cc/150?u=mom', role: 'Co-owner' },
+      { memberId: 'member-1', role: 'Owner' },
+      { memberId: 'member-2', role: 'Co-owner' },
     ],
   },
   // VALUABLES
@@ -175,6 +298,9 @@ const UNIFIED_DATA: { [key: string]: any } = {
     meta: 'Bank Locker • HDFC',
     image: 'https://placehold.co/100x100/EC4899/ffffff?text=💎',
     headerInfo: { label1: 'Weight', value1: '150 grams', label2: 'Location', value2: 'HDFC Locker' },
+    isShared: false,
+    linkedMemberId: 'member-2', // Mom
+    linkedMemberRole: 'primary' as LinkedMemberRole,
     cycles: [
       { id: 'c1', title: 'Valuation Update', frequency: 'Yearly', lastDone: 'Jan 2024', nextDue: 'Jan 2025', status: 'ok', instructions: 'Get valuation certificate from certified jeweler.' },
       { id: 'c2', title: 'Locker Rent', frequency: 'Yearly', lastDone: 'Jun 2024', nextDue: 'Jun 2025', status: 'ok', instructions: 'Pay locker rent at HDFC branch.' },
@@ -188,17 +314,20 @@ const UNIFIED_DATA: { [key: string]: any } = {
       { id: 'd2', name: 'Locker Agreement.pdf', type: 'pdf', date: 'Jun 2020' },
     ],
     familyAccess: [
-      { id: 'f1', name: 'Priya', avatar: 'https://i.pravatar.cc/150?u=mom', role: 'Primary' },
+      { memberId: 'member-2', role: 'Primary' },
     ],
   },
   // IDENTITY
   'doc-1': {
     id: 'doc-1',
     category: 'identity',
-    name: 'Dad\'s Passport',
+    name: 'Passport', // Will show as "Dad's Passport"
     meta: 'Valid • J1234567',
     image: 'https://placehold.co/100x100/6B7280/ffffff?text=🛂',
     headerInfo: { label1: 'Number', value1: 'J1234567', label2: 'Expiry', value2: 'Aug 2028' },
+    isShared: false,
+    linkedMemberId: 'member-1', // Dad
+    linkedMemberRole: 'holder' as LinkedMemberRole,
     cycles: [
       { id: 'c1', title: 'Renewal', frequency: '10 Years', lastDone: 'Aug 2018', nextDue: 'Aug 2028', status: 'ok', instructions: 'Apply for renewal 6 months before expiry.' },
     ],
@@ -208,7 +337,29 @@ const UNIFIED_DATA: { [key: string]: any } = {
       { id: 'd1', name: 'Passport Copy.pdf', type: 'pdf', date: 'Aug 2018' },
     ],
     familyAccess: [
-      { id: 'f1', name: 'Kamal', avatar: 'https://i.pravatar.cc/150?u=dad', role: 'Owner' },
+      { memberId: 'member-1', role: 'Holder' },
+    ],
+  },
+  'doc-2': {
+    id: 'doc-2',
+    category: 'identity',
+    name: 'Passport', // Will show as "Mom's Passport"
+    meta: 'Valid • K9876543',
+    image: 'https://placehold.co/100x100/6B7280/ffffff?text=🛂',
+    headerInfo: { label1: 'Number', value1: 'K9876543', label2: 'Expiry', value2: 'Dec 2026' },
+    isShared: false,
+    linkedMemberId: 'member-2', // Mom
+    linkedMemberRole: 'holder' as LinkedMemberRole,
+    cycles: [
+      { id: 'c1', title: 'Renewal', frequency: '10 Years', lastDone: 'Dec 2016', nextDue: 'Dec 2026', status: 'ok', instructions: 'Apply for renewal 6 months before expiry.' },
+    ],
+    amc: null,
+    cot: [],
+    documents: [
+      { id: 'd1', name: 'Passport Copy.pdf', type: 'pdf', date: 'Dec 2016' },
+    ],
+    familyAccess: [
+      { memberId: 'member-2', role: 'Holder' },
     ],
   },
 };
@@ -222,6 +373,7 @@ const LEGACY_MAP: { [key: string]: string } = {
 
 export const AssetDashboardScreen: React.FC = () => {
   const { theme } = useTheme();
+  const { members, getMemberById, getMemberDisplayName } = useFamily();
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<{ params: { assetId?: string; category?: string } }, 'params'>>();
   const insets = useSafeAreaInsets();
@@ -234,6 +386,35 @@ export const AssetDashboardScreen: React.FC = () => {
 
   const [showCycleModal, setShowCycleModal] = useState(false);
   const [selectedCycle, setSelectedCycle] = useState<any>(null);
+
+  // Get linked member info
+  const linkedMember = entity.linkedMemberId ? getMemberById(entity.linkedMemberId) : null;
+
+  // Generate display name with member relationship prefix
+  const getDisplayName = useMemo(() => {
+    if (entity.isShared) {
+      return entity.name; // No prefix for shared items
+    }
+    if (linkedMember) {
+      return `${linkedMember.displayRelationship}'s ${entity.name}`;
+    }
+    return entity.name;
+  }, [entity, linkedMember]);
+
+  // Resolve family access members dynamically
+  const resolvedFamilyAccess = useMemo(() => {
+    return entity.familyAccess?.map((access: { memberId: string; role: string }) => {
+      const member = getMemberById(access.memberId);
+      return {
+        id: access.memberId,
+        name: member?.name || 'Unknown',
+        avatar: member?.avatar,
+        color: member?.color || '#6B7280',
+        role: access.role,
+        displayRelationship: member?.displayRelationship || '',
+      };
+    }) || [];
+  }, [entity.familyAccess, getMemberById]);
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -303,9 +484,29 @@ export const AssetDashboardScreen: React.FC = () => {
         </View>
 
         <View style={styles.entityProfile}>
-          <Image source={{ uri: entity.image }} style={styles.entityImage} />
+          <View style={styles.entityImageContainer}>
+            <Image source={{ uri: entity.image }} style={styles.entityImage} />
+            {/* Linked Member Avatar Overlay */}
+            {linkedMember && !entity.isShared && (
+              <View style={styles.linkedMemberBadge}>
+                {linkedMember.avatar ? (
+                  <Image source={{ uri: linkedMember.avatar }} style={styles.linkedMemberAvatar} />
+                ) : (
+                  <View style={[styles.linkedMemberAvatar, { backgroundColor: linkedMember.color }]}>
+                    <Text style={styles.linkedMemberInitial}>{linkedMember.name.charAt(0)}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+            {/* Shared Badge */}
+            {entity.isShared && (
+              <View style={[styles.sharedBadge, { backgroundColor: '#FFF' }]}>
+                <MaterialCommunityIcons name="account-group" size={12} color={categoryConfig.color} />
+              </View>
+            )}
+          </View>
           <View style={styles.entityMeta}>
-            <Text style={styles.entityName}>{entity.name}</Text>
+            <Text style={styles.entityName}>{getDisplayName}</Text>
             <Text style={styles.entitySubtitle}>{entity.meta}</Text>
             <View style={styles.headerInfoRow}>
               <View style={styles.headerInfoItem}>
@@ -496,14 +697,22 @@ export const AssetDashboardScreen: React.FC = () => {
         )}
 
         {/* FAMILY ACCESS */}
-        {entity.familyAccess.length > 0 && (
+        {resolvedFamilyAccess.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.colors.utility.primaryText }]}>Family Access</Text>
             <View style={styles.familyRow}>
-              {entity.familyAccess.map((member: any) => (
+              {resolvedFamilyAccess.map((member: any) => (
                 <View key={member.id} style={styles.familyMember}>
-                  <Image source={{ uri: member.avatar }} style={styles.familyAvatar} />
-                  <Text style={[styles.familyName, { color: theme.colors.utility.primaryText }]}>{member.name}</Text>
+                  {member.avatar ? (
+                    <Image source={{ uri: member.avatar }} style={styles.familyAvatar} />
+                  ) : (
+                    <View style={[styles.familyAvatar, { backgroundColor: member.color }]}>
+                      <Text style={styles.familyAvatarInitial}>{member.name.charAt(0)}</Text>
+                    </View>
+                  )}
+                  <Text style={[styles.familyName, { color: theme.colors.utility.primaryText }]}>
+                    {member.displayRelationship || member.name}
+                  </Text>
                   <Text style={[styles.familyRole, { color: theme.colors.utility.secondaryText }]}>{member.role}</Text>
                 </View>
               ))}
@@ -620,7 +829,39 @@ const styles = StyleSheet.create({
   },
   headerBadgeText: { fontSize: 13, fontWeight: '600', color: '#FFF' },
   entityProfile: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20 },
+  entityImageContainer: { position: 'relative' },
   entityImage: { width: 70, height: 70, borderRadius: 14, backgroundColor: '#FFF' },
+  linkedMemberBadge: {
+    position: 'absolute',
+    top: -6,
+    left: -6,
+  },
+  linkedMemberAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+    borderColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  linkedMemberInitial: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  sharedBadge: {
+    position: 'absolute',
+    top: -4,
+    left: -4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
   entityMeta: { flex: 1, marginLeft: 16 },
   entityName: { fontSize: 18, fontWeight: '700', color: '#FFF', marginBottom: 4 },
   entitySubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginBottom: 10 },
@@ -684,6 +925,7 @@ const styles = StyleSheet.create({
   familyRow: { flexDirection: 'row', gap: 16, flexWrap: 'wrap' },
   familyMember: { alignItems: 'center', width: 70 },
   familyAvatar: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+  familyAvatarInitial: { color: '#FFF', fontSize: 18, fontWeight: '700' },
   familyName: { fontSize: 13, fontWeight: '600' },
   familyRole: { fontSize: 11, marginTop: 2 },
 

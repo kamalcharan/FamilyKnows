@@ -1,6 +1,6 @@
 // src/features/assets/screens/UniversalAddAssetScreen.tsx
 // Smart Lens Creation: Capture → Classify → Enrich
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,10 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
-  Easing,
+  Image,
+  Modal,
 } from 'react-native';
 import { Text, Button, Divider } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
+import { useFamily } from '../../../context/FamilyContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -77,6 +79,7 @@ const SUB_TYPES: { [key: string]: { id: string; label: string; icon: string }[] 
 
 export const UniversalAddAssetScreen: React.FC = () => {
   const { theme } = useTheme();
+  const { members, getMemberById } = useFamily();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
 
@@ -86,8 +89,30 @@ export const UniversalAddAssetScreen: React.FC = () => {
   const [selectedSubType, setSelectedSubType] = useState<string | null>(null);
   const [assetName, setAssetName] = useState('');
 
+  // Linked Member State
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [isSharedAsset, setIsSharedAsset] = useState(false);
+  const [showMemberPicker, setShowMemberPicker] = useState(false);
+
   // Dynamic Fields State
   const [formData, setFormData] = useState<{ [key: string]: string }>({});
+
+  // Get selected member details
+  const selectedMember = selectedMemberId ? getMemberById(selectedMemberId) : null;
+
+  // Get role label based on category
+  const getRoleLabel = useMemo(() => {
+    switch (selectedType) {
+      case 'wellness': return 'Patient';
+      case 'protection': return 'Policyholder';
+      case 'mobility': return 'Owner';
+      case 'identity': return 'Holder';
+      case 'electronics': return 'Primary User';
+      case 'valuables': return 'Owner';
+      case 'properties': return 'Owner';
+      default: return 'Owner';
+    }
+  }, [selectedType]);
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -129,6 +154,146 @@ export const UniversalAddAssetScreen: React.FC = () => {
   const getTypeDetails = () => ASSET_TYPES.find(t => t.id === selectedType);
   const getSubTypes = () => selectedType ? SUB_TYPES[selectedType] || [] : [];
 
+  // HELPER: Render member selector
+  const renderMemberSelector = () => (
+    <View style={styles.inputGroup}>
+      <View style={styles.memberSelectorHeader}>
+        <Text style={[styles.label, { color: theme.colors.utility.secondaryText, marginBottom: 0 }]}>
+          {getRoleLabel}
+        </Text>
+        {/* Shared Toggle - Only for properties, protection, electronics */}
+        {['properties', 'protection', 'electronics'].includes(selectedType || '') && (
+          <TouchableOpacity
+            style={[styles.sharedToggle, isSharedAsset && { backgroundColor: theme.colors.brand.primary + '15' }]}
+            onPress={() => {
+              setIsSharedAsset(!isSharedAsset);
+              if (!isSharedAsset) setSelectedMemberId(null);
+            }}
+          >
+            <MaterialCommunityIcons
+              name="account-group"
+              size={16}
+              color={isSharedAsset ? theme.colors.brand.primary : theme.colors.utility.secondaryText}
+            />
+            <Text style={{ fontSize: 12, color: isSharedAsset ? theme.colors.brand.primary : theme.colors.utility.secondaryText, fontWeight: '600' }}>
+              Family Shared
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {isSharedAsset ? (
+        <View style={[styles.sharedBadgeContainer, { backgroundColor: theme.colors.brand.primary + '10', borderColor: theme.colors.brand.primary + '30' }]}>
+          <MaterialCommunityIcons name="account-group" size={22} color={theme.colors.brand.primary} />
+          <View style={{ marginLeft: 12 }}>
+            <Text style={[styles.sharedBadgeTitle, { color: theme.colors.utility.primaryText }]}>Shared with Family</Text>
+            <Text style={[styles.sharedBadgeSubtitle, { color: theme.colors.utility.secondaryText }]}>This item will be visible to everyone</Text>
+          </View>
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={[
+            styles.memberSelectButton,
+            {
+              borderColor: selectedMember ? selectedMember.color : theme.colors.utility.secondaryText + '30',
+              backgroundColor: selectedMember ? selectedMember.color + '10' : theme.colors.utility.secondaryBackground
+            }
+          ]}
+          onPress={() => setShowMemberPicker(true)}
+        >
+          {selectedMember ? (
+            <>
+              {selectedMember.avatar ? (
+                <Image source={{ uri: selectedMember.avatar }} style={styles.memberSelectAvatar} />
+              ) : (
+                <View style={[styles.memberSelectAvatar, { backgroundColor: selectedMember.color }]}>
+                  <Text style={styles.memberSelectInitial}>{selectedMember.name.charAt(0)}</Text>
+                </View>
+              )}
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[styles.memberSelectName, { color: theme.colors.utility.primaryText }]}>
+                  {selectedMember.displayRelationship}
+                </Text>
+                <Text style={[styles.memberSelectRole, { color: theme.colors.utility.secondaryText }]}>
+                  {selectedMember.name} • {getRoleLabel}
+                </Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-down" size={20} color={theme.colors.utility.secondaryText} />
+            </>
+          ) : (
+            <>
+              <View style={[styles.memberSelectPlaceholder, { backgroundColor: theme.colors.utility.secondaryText + '20' }]}>
+                <MaterialCommunityIcons name="account" size={20} color={theme.colors.utility.secondaryText} />
+              </View>
+              <Text style={[styles.memberSelectText, { color: theme.colors.utility.secondaryText }]}>
+                Select Family Member
+              </Text>
+              <MaterialCommunityIcons name="chevron-down" size={20} color={theme.colors.utility.secondaryText} />
+            </>
+          )}
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
+  // HELPER: Render member picker modal
+  const renderMemberPickerModal = () => (
+    <Modal
+      visible={showMemberPicker}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={() => setShowMemberPicker(false)}
+    >
+      <View style={[styles.modalContainer, { backgroundColor: theme.colors.utility.primaryBackground }]}>
+        <View style={[styles.modalHeader, { borderBottomColor: theme.colors.utility.secondaryText + '20' }]}>
+          <Text style={[styles.modalTitle, { color: theme.colors.utility.primaryText }]}>Select {getRoleLabel}</Text>
+          <TouchableOpacity onPress={() => setShowMemberPicker(false)}>
+            <MaterialCommunityIcons name="close" size={24} color={theme.colors.utility.secondaryText} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView contentContainerStyle={{ padding: 20 }}>
+          {members.map((member) => (
+            <TouchableOpacity
+              key={member.id}
+              style={[
+                styles.memberPickerItem,
+                {
+                  backgroundColor: theme.colors.utility.secondaryBackground,
+                  borderColor: selectedMemberId === member.id ? member.color : 'transparent',
+                  borderWidth: selectedMemberId === member.id ? 2 : 0,
+                }
+              ]}
+              onPress={() => {
+                setSelectedMemberId(member.id);
+                setShowMemberPicker(false);
+              }}
+            >
+              {member.avatar ? (
+                <Image source={{ uri: member.avatar }} style={styles.memberPickerAvatar} />
+              ) : (
+                <View style={[styles.memberPickerAvatar, { backgroundColor: member.color }]}>
+                  <Text style={styles.memberPickerInitial}>{member.name.charAt(0)}</Text>
+                </View>
+              )}
+              <View style={{ flex: 1, marginLeft: 14 }}>
+                <Text style={[styles.memberPickerName, { color: theme.colors.utility.primaryText }]}>
+                  {member.displayRelationship}
+                </Text>
+                <Text style={[styles.memberPickerRelation, { color: theme.colors.utility.secondaryText }]}>
+                  {member.name}
+                </Text>
+              </View>
+              {selectedMemberId === member.id && (
+                <MaterialCommunityIcons name="check-circle" size={24} color={member.color} />
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+
   // HELPER: Render dynamic fields based on type
   const renderDynamicFields = () => {
     const typeDetails = getTypeDetails();
@@ -138,6 +303,7 @@ export const UniversalAddAssetScreen: React.FC = () => {
       case 'mobility':
         return (
           <>
+            {renderMemberSelector()}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.colors.utility.secondaryText }]}>Registration Number</Text>
               <TextInput
@@ -171,6 +337,7 @@ export const UniversalAddAssetScreen: React.FC = () => {
       case 'electronics':
         return (
           <>
+            {renderMemberSelector()}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.colors.utility.secondaryText }]}>Location in Home</Text>
               <TextInput
@@ -196,6 +363,7 @@ export const UniversalAddAssetScreen: React.FC = () => {
       case 'protection':
         return (
           <>
+            {renderMemberSelector()}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.colors.utility.secondaryText }]}>Policy Number</Text>
               <TextInput
@@ -240,13 +408,7 @@ export const UniversalAddAssetScreen: React.FC = () => {
       case 'wellness':
         return (
           <>
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.utility.secondaryText }]}>Family Member</Text>
-              <TouchableOpacity style={[styles.dateInput, { borderColor: theme.colors.utility.secondaryText + '30', backgroundColor: theme.colors.utility.secondaryBackground }]}>
-                <MaterialCommunityIcons name="account" size={20} color={theme.colors.brand.primary} />
-                <Text style={{ color: theme.colors.utility.secondaryText }}>Select Member</Text>
-              </TouchableOpacity>
-            </View>
+            {renderMemberSelector()}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.colors.utility.secondaryText }]}>Primary Doctor / Specialist</Text>
               <TextInput
@@ -268,6 +430,7 @@ export const UniversalAddAssetScreen: React.FC = () => {
       case 'properties':
         return (
           <>
+            {renderMemberSelector()}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.colors.utility.secondaryText }]}>Address</Text>
               <TextInput
@@ -300,6 +463,7 @@ export const UniversalAddAssetScreen: React.FC = () => {
       case 'identity':
         return (
           <>
+            {renderMemberSelector()}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.colors.utility.secondaryText }]}>Document Number</Text>
               <TextInput
@@ -307,13 +471,6 @@ export const UniversalAddAssetScreen: React.FC = () => {
                 placeholder="e.g. J1234567"
                 placeholderTextColor={theme.colors.utility.secondaryText + '80'}
               />
-            </View>
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.utility.secondaryText }]}>Belongs To</Text>
-              <TouchableOpacity style={[styles.dateInput, { borderColor: theme.colors.utility.secondaryText + '30', backgroundColor: theme.colors.utility.secondaryBackground }]}>
-                <MaterialCommunityIcons name="account" size={20} color={theme.colors.brand.primary} />
-                <Text style={{ color: theme.colors.utility.secondaryText }}>Select Family Member</Text>
-              </TouchableOpacity>
             </View>
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.colors.utility.secondaryText }]}>Expiry / Renewal Date</Text>
@@ -526,6 +683,9 @@ export const UniversalAddAssetScreen: React.FC = () => {
         </Animated.View>
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Member Picker Modal */}
+      {renderMemberPickerModal()}
     </KeyboardAvoidingView>
   );
 };
@@ -704,5 +864,119 @@ const styles = StyleSheet.create({
   submitButton: {
     borderRadius: 25,
     height: 54,
+  },
+
+  // Member Selector
+  memberSelectorHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sharedToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  sharedBadgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  sharedBadgeTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  sharedBadgeSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  memberSelectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 56,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+  },
+  memberSelectAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  memberSelectInitial: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  memberSelectName: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  memberSelectRole: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  memberSelectPlaceholder: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  memberSelectText: {
+    flex: 1,
+    fontSize: 15,
+  },
+
+  // Modal
+  modalContainer: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  memberPickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 10,
+  },
+  memberPickerAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  memberPickerInitial: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  memberPickerName: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  memberPickerRelation: {
+    fontSize: 13,
+    marginTop: 2,
   },
 });

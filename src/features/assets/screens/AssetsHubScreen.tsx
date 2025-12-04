@@ -1,6 +1,6 @@
 // src/features/assets/screens/AssetsHubScreen.tsx
 // Unified Family Vault - Assets, Insurance, Health, Documents all in one place
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
+import { useFamily } from '../../../context/FamilyContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -27,9 +28,12 @@ type AssetCategory =
   | 'valuables'     // Gold, Art, Watches
   | 'identity';     // Passports, Aadhaar, Deeds
 
+// Role types based on category
+type LinkedMemberRole = 'owner' | 'patient' | 'policyholder' | 'covered' | 'holder' | 'primary';
+
 interface UnifiedAsset {
   id: string;
-  title: string;
+  title: string;              // Generic title (e.g., "Cardiac Care", not "Dad's Cardiac Care")
   category: AssetCategory;
   icon: string;
   color: string;
@@ -39,11 +43,14 @@ interface UnifiedAsset {
   daysUntilDue?: number;
   meta: string;
   image: string;
-  ownerId?: string;
+  // Linked member fields
+  linkedMemberId?: string;    // Reference to family member
+  linkedMemberRole?: LinkedMemberRole;
+  isShared?: boolean;         // For family-wide assets (property, insurance floater)
 }
 
 // --- UNIFIED DATA MODEL ---
-// Every entity follows: Identity → CoT → Cycles → Docs
+// Now with linkedMemberId instead of hardcoded names
 const UNIFIED_ASSETS: UnifiedAsset[] = [
   // PROTECTION (Insurance)
   {
@@ -56,8 +63,10 @@ const UNIFIED_ASSETS: UnifiedAsset[] = [
     nextCycle: 'Premium Due',
     dueDate: '12 Dec 2025',
     daysUntilDue: 373,
-    meta: 'Cover: ₹50L • Family Floater',
+    meta: 'Cover: ₹50L',
     image: 'https://placehold.co/100x100/8B5CF6/ffffff?text=HDFC',
+    isShared: true, // Family Floater
+    linkedMemberRole: 'policyholder',
   },
   {
     id: 'ins-2',
@@ -69,13 +78,15 @@ const UNIFIED_ASSETS: UnifiedAsset[] = [
     nextCycle: 'Premium Due',
     dueDate: '15 Mar 2025',
     daysUntilDue: 101,
-    meta: 'Cover: ₹1Cr • Dad',
+    meta: 'Cover: ₹1Cr',
     image: 'https://placehold.co/100x100/8B5CF6/ffffff?text=LIC',
+    linkedMemberId: 'member-1', // Dad
+    linkedMemberRole: 'policyholder',
   },
   // WELLNESS (Health)
   {
     id: 'health-1',
-    title: 'Dad\'s Cardiac Care',
+    title: 'Cardiac Care',
     category: 'wellness',
     icon: 'heart-pulse',
     color: '#EF4444',
@@ -85,10 +96,12 @@ const UNIFIED_ASSETS: UnifiedAsset[] = [
     daysUntilDue: 5,
     meta: 'Dr. Rao • Apollo Hospital',
     image: 'https://placehold.co/100x100/EF4444/ffffff?text=❤️',
+    linkedMemberId: 'member-1', // Dad
+    linkedMemberRole: 'patient',
   },
   {
     id: 'health-2',
-    title: 'Mom\'s Thyroid Management',
+    title: 'Thyroid Management',
     category: 'wellness',
     icon: 'medical-bag',
     color: '#EF4444',
@@ -98,6 +111,8 @@ const UNIFIED_ASSETS: UnifiedAsset[] = [
     daysUntilDue: 47,
     meta: 'Dr. Sharma • Endocrinologist',
     image: 'https://placehold.co/100x100/EF4444/ffffff?text=🩺',
+    linkedMemberId: 'member-2', // Mom
+    linkedMemberRole: 'patient',
   },
   // ELECTRONICS
   {
@@ -112,6 +127,7 @@ const UNIFIED_ASSETS: UnifiedAsset[] = [
     daysUntilDue: -2,
     meta: 'AMC Active • Utility Area',
     image: 'https://rukminim2.flixcart.com/image/850/1000/xif0q/inverter/y/i/n/-original-imagqhyq9g5g5z8h.jpeg?q=90',
+    isShared: true,
   },
   {
     id: 'elec-2',
@@ -125,6 +141,8 @@ const UNIFIED_ASSETS: UnifiedAsset[] = [
     daysUntilDue: 27,
     meta: 'Warranty till Mar 2026',
     image: 'https://images.samsung.com/is/image/samsung/p6pim/in/ww80t4020ce1tl/gallery/in-front-loading-washer-ww80t4020ce1tl-ww80t4020ce-tl-532860477?$684_547_PNG$',
+    linkedMemberId: 'member-2', // Mom (primary user)
+    linkedMemberRole: 'primary',
   },
   // MOBILITY
   {
@@ -139,6 +157,8 @@ const UNIFIED_ASSETS: UnifiedAsset[] = [
     daysUntilDue: 10,
     meta: 'KA-01-MJ-1234 • 45,000 km',
     image: 'https://imgd.aeplcdn.com/664x374/n/cw/ec/142739/safari-exterior-right-front-three-quarter-2.jpeg?isig=0&q=80',
+    linkedMemberId: 'member-1', // Dad
+    linkedMemberRole: 'owner',
   },
   {
     id: 'veh-2',
@@ -150,8 +170,10 @@ const UNIFIED_ASSETS: UnifiedAsset[] = [
     nextCycle: 'Insurance Renewal',
     dueDate: 'Due in 10 Days',
     daysUntilDue: 10,
-    meta: 'KA-01-AB-5678 • Mom',
+    meta: 'KA-01-AB-5678',
     image: 'https://bd.gaadicdn.com/processedimages/honda/activa-6g/640X309/activa-6g6543d1fd2c9a.jpg',
+    linkedMemberId: 'member-2', // Mom
+    linkedMemberRole: 'owner',
   },
   // PROPERTIES
   {
@@ -166,6 +188,7 @@ const UNIFIED_ASSETS: UnifiedAsset[] = [
     daysUntilDue: 120,
     meta: 'Owned • Dream Home',
     image: 'https://placehold.co/100x100/4F46E5/ffffff?text=🏠',
+    isShared: true,
   },
   // VALUABLES
   {
@@ -180,11 +203,13 @@ const UNIFIED_ASSETS: UnifiedAsset[] = [
     daysUntilDue: 60,
     meta: 'Bank Locker • HDFC',
     image: 'https://placehold.co/100x100/EC4899/ffffff?text=💎',
+    linkedMemberId: 'member-2', // Mom
+    linkedMemberRole: 'primary',
   },
   // IDENTITY
   {
     id: 'doc-1',
-    title: 'Dad\'s Passport',
+    title: 'Passport',
     category: 'identity',
     icon: 'passport',
     color: '#6B7280',
@@ -194,6 +219,23 @@ const UNIFIED_ASSETS: UnifiedAsset[] = [
     daysUntilDue: 1350,
     meta: 'Valid • J1234567',
     image: 'https://placehold.co/100x100/6B7280/ffffff?text=🛂',
+    linkedMemberId: 'member-1', // Dad
+    linkedMemberRole: 'holder',
+  },
+  {
+    id: 'doc-2',
+    title: 'Passport',
+    category: 'identity',
+    icon: 'passport',
+    color: '#6B7280',
+    status: 'good',
+    nextCycle: 'Renewal',
+    dueDate: 'Dec 2026',
+    daysUntilDue: 750,
+    meta: 'Valid • K9876543',
+    image: 'https://placehold.co/100x100/6B7280/ffffff?text=🛂',
+    linkedMemberId: 'member-2', // Mom
+    linkedMemberRole: 'holder',
   },
 ];
 
@@ -218,11 +260,13 @@ const STATUS_FILTERS = [
 
 export const AssetsHubScreen: React.FC = () => {
   const { theme } = useTheme();
+  const { members, getMemberById, getMemberDisplayName } = useFamily();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
 
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeStatus, setActiveStatus] = useState('all');
+  const [activeMember, setActiveMember] = useState('all'); // NEW: Person filter
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -235,12 +279,38 @@ export const AssetsHubScreen: React.FC = () => {
     ]).start();
   }, []);
 
-  // Filter logic
-  const filteredData = UNIFIED_ASSETS.filter(item => {
-    const categoryMatch = activeCategory === 'all' || item.category === activeCategory;
-    const statusMatch = activeStatus === 'all' || item.status === activeStatus;
-    return categoryMatch && statusMatch;
-  });
+  // Build person filter options from family members
+  const personFilters = useMemo(() => {
+    return [
+      { id: 'all', name: 'Everyone', avatar: null, color: '#6B7280' },
+      ...members.map(m => ({
+        id: m.id,
+        name: m.displayRelationship,
+        avatar: m.avatar,
+        color: m.color,
+      })),
+    ];
+  }, [members]);
+
+  // Filter logic - now includes person filter
+  const filteredData = useMemo(() => {
+    return UNIFIED_ASSETS.filter(item => {
+      const categoryMatch = activeCategory === 'all' || item.category === activeCategory;
+      const statusMatch = activeStatus === 'all' || item.status === activeStatus;
+
+      // Person filter logic
+      let personMatch = activeMember === 'all';
+      if (!personMatch) {
+        if (item.isShared) {
+          personMatch = true; // Shared items show for everyone
+        } else {
+          personMatch = item.linkedMemberId === activeMember;
+        }
+      }
+
+      return categoryMatch && statusMatch && personMatch;
+    });
+  }, [activeCategory, activeStatus, activeMember]);
 
   // Summary stats
   const criticalCount = UNIFIED_ASSETS.filter(a => a.status === 'critical').length;
@@ -255,70 +325,157 @@ export const AssetsHubScreen: React.FC = () => {
     }
   };
 
-  const renderAssetCard = ({ item, index }: { item: UnifiedAsset; index: number }) => (
-    <Animated.View
-      style={{
-        opacity: fadeAnim,
-        transform: [{ translateY: Animated.multiply(slideAnim, new Animated.Value(1 + index * 0.1)) }],
-      }}
+  // Generate display title with member relationship
+  const getDisplayTitle = (item: UnifiedAsset): string => {
+    if (item.isShared) {
+      return item.title; // No prefix for shared items
+    }
+    if (item.linkedMemberId) {
+      const memberName = getMemberDisplayName(item.linkedMemberId, 'relationship');
+      return `${memberName}'s ${item.title}`;
+    }
+    return item.title;
+  };
+
+  // Generate display meta with member info
+  const getDisplayMeta = (item: UnifiedAsset): string => {
+    if (item.isShared) {
+      return `${item.meta} • Family`;
+    }
+    if (item.linkedMemberId) {
+      const member = getMemberById(item.linkedMemberId);
+      if (member) {
+        return `${item.meta} • ${member.name}`;
+      }
+    }
+    return item.meta;
+  };
+
+  const renderPersonFilter = () => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.personFilterContainer}
+      contentContainerStyle={styles.personFilterContent}
     >
-      <TouchableOpacity
-        activeOpacity={0.9}
-        style={[styles.card, { backgroundColor: theme.colors.utility.secondaryBackground }]}
-        onPress={() => navigation.navigate('AssetDashboard', { assetId: item.id, category: item.category })}
-      >
-        {/* Image with Category Badge */}
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: item.image }} style={styles.cardImage} />
-          <View style={[styles.categoryBadge, { backgroundColor: item.color }]}>
-            <MaterialCommunityIcons name={item.icon as any} size={14} color="#FFF" />
-          </View>
-          {/* Status Indicator Dot */}
-          {item.status !== 'good' && (
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
-          )}
-        </View>
-
-        {/* Content */}
-        <View style={styles.cardContent}>
-          <View style={styles.cardHeader}>
-            <Text style={[styles.cardTitle, { color: theme.colors.utility.primaryText }]} numberOfLines={1}>
-              {item.title}
+      {personFilters.map((person) => {
+        const isSelected = activeMember === person.id;
+        return (
+          <TouchableOpacity
+            key={person.id}
+            style={[
+              styles.personChip,
+              isSelected && { backgroundColor: '#FFF' },
+              !isSelected && { backgroundColor: 'rgba(255,255,255,0.15)' }
+            ]}
+            onPress={() => setActiveMember(person.id)}
+            activeOpacity={0.8}
+          >
+            {person.avatar ? (
+              <Image source={{ uri: person.avatar }} style={styles.personAvatar} />
+            ) : (
+              <View style={[styles.personAvatar, { backgroundColor: isSelected ? person.color : 'rgba(255,255,255,0.3)' }]}>
+                <MaterialCommunityIcons
+                  name={person.id === 'all' ? 'account-group' : 'account'}
+                  size={14}
+                  color="#FFF"
+                />
+              </View>
+            )}
+            <Text style={[
+              styles.personName,
+              { color: isSelected ? theme.colors.brand.primary : 'rgba(255,255,255,0.9)' }
+            ]}>
+              {person.name}
             </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+
+  const renderAssetCard = ({ item, index }: { item: UnifiedAsset; index: number }) => {
+    const displayTitle = getDisplayTitle(item);
+    const displayMeta = getDisplayMeta(item);
+    const linkedMember = item.linkedMemberId ? getMemberById(item.linkedMemberId) : null;
+
+    return (
+      <Animated.View
+        style={{
+          opacity: fadeAnim,
+          transform: [{ translateY: Animated.multiply(slideAnim, new Animated.Value(1 + index * 0.1)) }],
+        }}
+      >
+        <TouchableOpacity
+          activeOpacity={0.9}
+          style={[styles.card, { backgroundColor: theme.colors.utility.secondaryBackground }]}
+          onPress={() => navigation.navigate('AssetDashboard', { assetId: item.id, category: item.category })}
+        >
+          {/* Image with Category Badge */}
+          <View style={styles.imageContainer}>
+            <Image source={{ uri: item.image }} style={styles.cardImage} />
+            <View style={[styles.categoryBadge, { backgroundColor: item.color }]}>
+              <MaterialCommunityIcons name={item.icon as any} size={14} color="#FFF" />
+            </View>
+            {/* Status Indicator Dot */}
+            {item.status !== 'good' && (
+              <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
+            )}
+            {/* Member Avatar (if linked) */}
+            {linkedMember && !item.isShared && (
+              <View style={styles.memberAvatarContainer}>
+                {linkedMember.avatar ? (
+                  <Image source={{ uri: linkedMember.avatar }} style={styles.memberAvatarSmall} />
+                ) : (
+                  <View style={[styles.memberAvatarSmall, { backgroundColor: linkedMember.color }]}>
+                    <Text style={styles.memberInitial}>{linkedMember.name.charAt(0)}</Text>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
 
-          <Text style={[styles.metaText, { color: theme.colors.utility.secondaryText }]} numberOfLines={1}>
-            {item.meta}
-          </Text>
-
-          {/* Cycle Info */}
-          <View style={styles.cycleRow}>
-            <View style={[styles.cycleTag, { backgroundColor: getStatusColor(item.status) + '15' }]}>
-              <MaterialCommunityIcons
-                name={item.status === 'critical' ? 'alert-circle' : item.status === 'warning' ? 'clock-alert' : 'update'}
-                size={12}
-                color={getStatusColor(item.status)}
-              />
-              <Text style={[styles.cycleText, { color: getStatusColor(item.status) }]}>
-                {item.nextCycle}
+          {/* Content */}
+          <View style={styles.cardContent}>
+            <View style={styles.cardHeader}>
+              <Text style={[styles.cardTitle, { color: theme.colors.utility.primaryText }]} numberOfLines={1}>
+                {displayTitle}
               </Text>
             </View>
-            <Text style={[styles.dueText, { color: getStatusColor(item.status) }]}>
-              {item.dueDate}
-            </Text>
-          </View>
-        </View>
 
-        {/* Arrow */}
-        <MaterialCommunityIcons
-          name="chevron-right"
-          size={20}
-          color={theme.colors.utility.secondaryText}
-          style={styles.cardArrow}
-        />
-      </TouchableOpacity>
-    </Animated.View>
-  );
+            <Text style={[styles.metaText, { color: theme.colors.utility.secondaryText }]} numberOfLines={1}>
+              {displayMeta}
+            </Text>
+
+            {/* Cycle Info */}
+            <View style={styles.cycleRow}>
+              <View style={[styles.cycleTag, { backgroundColor: getStatusColor(item.status) + '15' }]}>
+                <MaterialCommunityIcons
+                  name={item.status === 'critical' ? 'alert-circle' : item.status === 'warning' ? 'clock-alert' : 'update'}
+                  size={12}
+                  color={getStatusColor(item.status)}
+                />
+                <Text style={[styles.cycleText, { color: getStatusColor(item.status) }]}>
+                  {item.nextCycle}
+                </Text>
+              </View>
+              <Text style={[styles.dueText, { color: getStatusColor(item.status) }]}>
+                {item.dueDate}
+              </Text>
+            </View>
+          </View>
+
+          {/* Arrow */}
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={20}
+            color={theme.colors.utility.secondaryText}
+            style={styles.cardArrow}
+          />
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.utility.primaryBackground }]}>
@@ -365,6 +522,9 @@ export const AssetsHubScreen: React.FC = () => {
             )}
           </View>
         )}
+
+        {/* Person Filter (NEW) */}
+        {renderPersonFilter()}
 
         {/* Category Pills (Horizontal Scroll) */}
         <ScrollView
@@ -435,7 +595,9 @@ export const AssetsHubScreen: React.FC = () => {
           <View style={styles.listHeader}>
             <Text style={[styles.sectionTitle, { color: theme.colors.utility.primaryText }]}>
               {activeCategory === 'all'
-                ? 'All Assets & Protection'
+                ? activeMember === 'all'
+                  ? 'All Assets & Protection'
+                  : `${personFilters.find(p => p.id === activeMember)?.name}'s Items`
                 : CATEGORY_FILTERS.find(c => c.id === activeCategory)?.label}
             </Text>
             <View style={[styles.countBadge, { backgroundColor: theme.colors.brand.primary + '15' }]}>
@@ -505,7 +667,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 12,
-    marginBottom: 16,
+    marginBottom: 12,
     paddingHorizontal: 20,
   },
   alertChip: {
@@ -517,6 +679,31 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   alertText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
+
+  // Person Filter (NEW)
+  personFilterContainer: {
+    marginBottom: 12,
+  },
+  personFilterContent: {
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  personChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    gap: 8,
+  },
+  personAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  personName: { fontWeight: '600', fontSize: 13 },
 
   // Filters
   filterContainer: { marginTop: 4 },
@@ -604,6 +791,25 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 2,
     borderColor: '#FFF',
+  },
+  memberAvatarContainer: {
+    position: 'absolute',
+    top: -4,
+    left: -4,
+  },
+  memberAvatarSmall: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  memberInitial: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '700',
   },
   cardContent: { flex: 1, marginLeft: 14 },
   cardHeader: {
