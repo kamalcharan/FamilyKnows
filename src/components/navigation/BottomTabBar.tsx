@@ -1,5 +1,5 @@
 // src/components/navigation/BottomTabBar.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,8 +9,7 @@ import {
 import { useTheme } from '../../theme/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { QuickActionCard } from '../shared/QuickActionCard';
-import { defaultQuickActions } from '../../dummydata/quickActions';
+import { useNavigation } from '@react-navigation/native';
 
 export type TabRoute = 'home' | 'assets' | 'documents' | 'services' | 'family';
 export type InteractionMode = 'chat' | 'keyboard'; // voice hidden for now
@@ -18,20 +17,24 @@ export type InteractionMode = 'chat' | 'keyboard'; // voice hidden for now
 interface BottomTabBarProps {
   activeTab: TabRoute;
   onTabPress: (route: TabRoute) => void;
+  activeMode?: InteractionMode;
+  onModeChange?: (mode: InteractionMode) => void;
 }
 
 export const BottomTabBar: React.FC<BottomTabBarProps> = ({
   activeTab,
   onTabPress,
+  activeMode: propActiveMode,
+  onModeChange,
 }) => {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const [showActions, setShowActions] = useState(false);
-  const [activeMode, setActiveMode] = useState<InteractionMode>('keyboard'); // Local state for mode
+  const navigation = useNavigation<any>();
+  const [localMode, setLocalMode] = React.useState<InteractionMode>('keyboard');
 
-  // Animation values
-  const plusRotation = useRef(new Animated.Value(0)).current;
-  
+  // Use prop if provided, otherwise fall back to local state
+  const activeMode = propActiveMode ?? localMode;
+
   // Scale animations for mode buttons
   const modeScales = useRef({
     chat: new Animated.Value(activeMode === 'chat' ? 1.2 : 0.8),
@@ -52,25 +55,19 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
     });
   }, [activeMode, modeScales]);
 
-  useEffect(() => {
-    // Animate plus button rotation
-    Animated.timing(plusRotation, {
-      toValue: showActions ? 1 : 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [showActions, plusRotation]);
-
   const handleModeChange = (mode: InteractionMode) => {
-    setActiveMode(mode);
+    if (onModeChange) {
+      onModeChange(mode);
+    } else {
+      setLocalMode(mode);
+    }
     console.log('Interaction mode changed to:', mode);
-    // Handle mode change - activate chat, voice, or keyboard input
   };
 
   const getModeIcon = (mode: InteractionMode) => {
     switch (mode) {
       case 'chat':
-        return 'message-text';
+        return 'robot-happy'; // AI Mode icon
       case 'keyboard':
         return 'keyboard';
     }
@@ -134,10 +131,10 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
     );
   };
 
-  const rotateInterpolate = plusRotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '45deg'],
-  });
+  // Navigate to Entity Wizard
+  const handleAddPress = () => {
+    navigation.navigate('AddAsset');
+  };
 
   return (
     <>
@@ -177,35 +174,22 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
             })()}
           </View>
 
-          {/* Add Button */}
-          <Animated.View
-            style={{
-              transform: [{ rotate: rotateInterpolate }],
-            }}
+          {/* Add Button - Opens Entity Wizard */}
+          <TouchableOpacity
+            style={styles.addButtonContainer}
+            onPress={handleAddPress}
+            activeOpacity={0.8}
           >
-            <TouchableOpacity
-              style={styles.addButtonContainer}
-              onPress={() => setShowActions(!showActions)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.addButton, { backgroundColor: theme.colors.brand.primary }]}>
-                <MaterialCommunityIcons
-                  name="plus"
-                  size={28}
-                  color="#fff"
-                />
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
+            <View style={[styles.addButton, { backgroundColor: theme.colors.brand.primary }]}>
+              <MaterialCommunityIcons
+                name="plus"
+                size={28}
+                color="#fff"
+              />
+            </View>
+          </TouchableOpacity>
         </View>
       </View>
-
-      {/* Quick Action Card */}
-      <QuickActionCard
-        visible={showActions}
-        onClose={() => setShowActions(false)}
-        actions={defaultQuickActions}
-      />
     </>
   );
 };

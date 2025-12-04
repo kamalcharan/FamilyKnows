@@ -1,11 +1,14 @@
-// src/features/dashboard/screens/MainDashboard.tsx (updated with theme-aware colors)
-import React, { useState, useEffect } from 'react';
+// src/features/dashboard/screens/MainDashboard.tsx
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  Animated,
+  Easing,
+  StatusBar,
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,6 +16,7 @@ import { useTheme } from '../../../theme/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MainLayout } from '../../../components/layout/MainLayout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { AssistantCard } from '../components/AssistantCard';
 import { CollaboratorsCard } from '../components/CollaboratorsCard';
 import { ChatModeContent } from '../../chat';
@@ -20,30 +24,96 @@ import { CollaboratorsScreen } from '../../collaborators';
 import { QuickActionCard } from '../../../components/shared/QuickActionCard';
 import { defaultQuickActions } from '../../../dummydata/quickActions';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const RECENT_SCREENS_KEY = '@FamilyKnows:recentScreens';
 const MODE_KEY = '@FamilyKnows:interfaceMode';
 
+// Interactive Card Component with Scale Animation
+const AnimatedCard = ({ children, onPress, style }: any) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.96,
+      useNativeDriver: true,
+      speed: 20,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 20,
+      bounciness: 4,
+    }).start();
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={1}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Animated.View style={[style, { transform: [{ scale: scaleAnim }] }]}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
+
 export const MainDashboard: React.FC = () => {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
+
+  // State
   const [mode, setMode] = useState<'keyboard' | 'chat'>('keyboard');
   const [recentScreens, setRecentScreens] = useState<string[]>([]);
   const [activeScreen, setActiveScreen] = useState<string | null>(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
 
+  // Animations
+  const dashboardOpacity = useRef(new Animated.Value(1)).current;
+  const chatOpacity = useRef(new Animated.Value(0)).current;
+
+  // Dashboard Items Stagger Animation
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const contentTranslateY = useRef(new Animated.Value(20)).current;
+
   // Load saved mode and recent screens on mount
   useEffect(() => {
     loadSavedMode();
     loadRecentScreens();
+    startEntranceAnimation();
   }, []);
+
+  const startEntranceAnimation = () => {
+    Animated.parallel([
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.cubic),
+      }),
+      Animated.spring(contentTranslateY, {
+        toValue: 0,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
 
   const loadSavedMode = async () => {
     try {
       const savedMode = await AsyncStorage.getItem(MODE_KEY);
-      if (savedMode === 'chat' || savedMode === 'keyboard') {
-        setMode(savedMode);
+      if (savedMode === 'chat') {
+        // If saved mode was chat, animate to it after a brief delay
+        setTimeout(() => handleModeChange('chat'), 500);
       }
     } catch (error) {
       console.error('Error loading mode:', error);
@@ -61,18 +131,8 @@ export const MainDashboard: React.FC = () => {
     }
   };
 
-  const saveMode = async (newMode: 'keyboard' | 'chat') => {
-    try {
-      await AsyncStorage.setItem(MODE_KEY, newMode);
-      setMode(newMode);
-    } catch (error) {
-      console.error('Error saving mode:', error);
-    }
-  };
-
   const trackScreenAccess = async (screenId: string) => {
     try {
-      // Add to beginning of array, remove duplicates, keep only last 4
       const updated = [screenId, ...recentScreens.filter(id => id !== screenId)].slice(0, 4);
       await AsyncStorage.setItem(RECENT_SCREENS_KEY, JSON.stringify(updated));
       setRecentScreens(updated);
@@ -81,20 +141,69 @@ export const MainDashboard: React.FC = () => {
     }
   };
 
-  const handleSwitchMode = () => {
+  // Mode change handler - Clean full-screen transition (fade)
+  const handleModeChange = useCallback((newMode: 'keyboard' | 'chat') => {
+    if (newMode === mode) return; // Already in this mode
+
+    // Save to AsyncStorage
+    AsyncStorage.setItem(MODE_KEY, newMode).catch(console.error);
+
+    if (newMode === 'chat') {
+      // Transition TO AI Mode - Full screen with fade
+      setMode('chat');
+      Animated.parallel([
+        Animated.timing(dashboardOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(chatOpacity, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      // Transition TO Dashboard (keyboard mode)
+      Animated.parallel([
+        Animated.timing(chatOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(dashboardOpacity, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start(({ finished }) => {
+        if (finished) setMode('keyboard');
+      });
+    }
+  }, [mode, dashboardOpacity, chatOpacity]);
+
+  // Toggle handler for AssistantCard
+  const handleSwitchMode = useCallback(() => {
     const newMode = mode === 'keyboard' ? 'chat' : 'keyboard';
-    saveMode(newMode);
-  };
+    handleModeChange(newMode);
+  }, [mode, handleModeChange]);
 
   const handleCardPress = (screenId: string) => {
     trackScreenAccess(screenId);
-    if (screenId === 'collaborators') {
-      setActiveScreen('collaborators');
+
+    if (screenId === 'assets') {
+      navigation.navigate('AssetsHub');
+    } else if (screenId === 'health') {
+      navigation.navigate('HealthTimeline');
+    } else if (screenId === 'collaborators') {
+      navigation.navigate('CollaboratorsOrbit');
+    } else if (screenId === 'documents') {
+      navigation.navigate('DocumentsVault');
     }
-    // Add more screen navigation here
+    // Add other screen navigations here
   };
 
-  // Use theme colors for dashboard cards - 6 main categories (excluding collaborators)
+  // Dashboard Cards Configuration
   const dashboardCards = [
     {
       id: 'tasks',
@@ -102,7 +211,7 @@ export const MainDashboard: React.FC = () => {
       icon: 'clipboard-check',
       color: theme.colors.accent.accent1,
       bgColor: theme.colors.accent.accent1 + '15',
-      description: 'Manage your daily tasks',
+      description: 'Daily tasks',
     },
     {
       id: 'assets',
@@ -110,7 +219,7 @@ export const MainDashboard: React.FC = () => {
       icon: 'cube-outline',
       color: theme.colors.accent.accent2,
       bgColor: theme.colors.accent.accent2 + '15',
-      description: 'Track your valuables',
+      description: 'Track valuables',
     },
     {
       id: 'health',
@@ -118,7 +227,7 @@ export const MainDashboard: React.FC = () => {
       icon: 'heart-pulse',
       color: theme.colors.accent.accent3,
       bgColor: theme.colors.accent.accent3 + '15',
-      description: 'Health records & reminders',
+      description: 'Health records',
     },
     {
       id: 'finance',
@@ -134,7 +243,7 @@ export const MainDashboard: React.FC = () => {
       icon: 'file-document-multiple',
       color: theme.colors.brand.primary,
       bgColor: theme.colors.brand.primary + '15',
-      description: 'Store documents',
+      description: 'Store docs',
     },
     {
       id: 'events',
@@ -146,180 +255,202 @@ export const MainDashboard: React.FC = () => {
     },
   ];
 
-  // Get cards to display - prioritize recent screens (top 4)
   const getDisplayCards = () => {
     const recent = recentScreens
       .slice(0, 4)
       .map(id => dashboardCards.find(card => card.id === id))
       .filter(Boolean);
 
-    // If less than 4 recent, fill with other cards
     if (recent.length < 4) {
       const remainingCards = dashboardCards.filter(
         card => !recent.find(r => r?.id === card.id)
       );
       recent.push(...remainingCards.slice(0, 4 - recent.length));
     }
-
     return recent;
   };
 
-  const renderDashboardCard = (card: any, index: number) => (
-    <TouchableOpacity
+  const renderDashboardCard = (card: any) => (
+    <AnimatedCard
+      key={card.id}
       style={[
         styles.card,
         { backgroundColor: theme.colors.utility.secondaryBackground }
       ]}
-      activeOpacity={0.7}
       onPress={() => handleCardPress(card.id)}
     >
-      <View style={[styles.cardIconContainer, { backgroundColor: card.bgColor }]}>
-        <MaterialCommunityIcons
-          name={card.icon}
-          size={28}
-          color={card.color}
-        />
+      <View style={styles.cardHeader}>
+        <View style={[styles.cardIconContainer, { backgroundColor: card.bgColor }]}>
+          <MaterialCommunityIcons name={card.icon} size={24} color={card.color} />
+        </View>
+        <View style={[styles.arrowContainer, { backgroundColor: theme.colors.utility.primaryBackground }]}>
+          <MaterialCommunityIcons name="arrow-right" size={16} color={theme.colors.utility.secondaryText} />
+        </View>
       </View>
-      <Text style={[styles.cardTitle, { color: theme.colors.utility.primaryText }]}>
-        {card.title}
-      </Text>
-      <Text style={[styles.cardDescription, { color: theme.colors.utility.secondaryText }]}>
-        {card.description}
-      </Text>
-      <MaterialCommunityIcons
-        name="arrow-right"
-        size={20}
-        color={theme.colors.brand.primary}
-        style={styles.cardArrow}
-      />
-    </TouchableOpacity>
+
+      <View style={styles.cardContent}>
+        <Text style={[styles.cardTitle, { color: theme.colors.utility.primaryText }]}>
+          {card.title}
+        </Text>
+        <Text style={[styles.cardDescription, { color: theme.colors.utility.secondaryText }]}>
+          {card.description}
+        </Text>
+      </View>
+    </AnimatedCard>
   );
 
-  // Show different screen based on activeScreen
   if (activeScreen === 'collaborators') {
     return <CollaboratorsScreen />;
   }
 
+  // In AI mode: hide header and tabs for true full-screen
+  const isAIMode = mode === 'chat';
+
   return (
-    <MainLayout activeTab={mode === 'chat' ? 'chat' : 'home'} headerTitle="FamilyKnows">
-      {mode === 'chat' ? (
-        <ChatModeContent userName="User" />
-      ) : (
-        <ScrollView
-          style={[styles.container, { backgroundColor: theme.colors.utility.primaryBackground }]}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + insets.bottom }]}
-          showsVerticalScrollIndicator={false}
+    <MainLayout
+      activeTab={isAIMode ? 'chat' : 'home'}
+      headerTitle=""
+      showHeader={!isAIMode}
+      showTabs={true}
+      activeMode={mode}
+      onModeChange={handleModeChange}
+    >
+      <StatusBar barStyle={isAIMode ? "light-content" : "dark-content"} />
+
+      <View style={[styles.container, { backgroundColor: theme.colors.utility.primaryBackground }]}>
+
+        {/* DASHBOARD LAYER */}
+        <Animated.View
+          style={[
+            styles.dashboardLayer,
+            { opacity: dashboardOpacity }
+          ]}
         >
-          {/* Welcome Section */}
-          <View style={styles.welcomeSection}>
-            <Text style={[styles.greeting, { color: theme.colors.utility.secondaryText }]}>
-              Welcome back,
-            </Text>
-            <Text style={[styles.userName, { color: theme.colors.utility.primaryText }]}>
-              User
-            </Text>
-          </View>
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Animated Content Wrapper */}
+            <Animated.View style={{
+              opacity: contentOpacity,
+              transform: [{ translateY: contentTranslateY }]
+            }}>
+              {/* Header Section */}
+              <View style={styles.welcomeSection}>
+                <View>
+                  <Text style={[styles.greeting, { color: theme.colors.utility.secondaryText }]}>
+                    Good Morning,
+                  </Text>
+                  <Text style={[styles.userName, { color: theme.colors.utility.primaryText }]}>
+                    Kamal Charan
+                  </Text>
+                </View>
+                <TouchableOpacity style={[styles.profileButton, { backgroundColor: theme.colors.utility.secondaryBackground }]}>
+                  <MaterialCommunityIcons name="account" size={24} color={theme.colors.brand.primary} />
+                </TouchableOpacity>
+              </View>
 
-          {/* Assistant Mode Switcher Card */}
-          <AssistantCard mode={mode} onSwitchMode={handleSwitchMode} />
+              {/* AI Assistant Trigger */}
+              <View style={styles.assistantSection}>
+                <AssistantCard mode={mode} onSwitchMode={handleSwitchMode} />
+              </View>
 
-        {/* Dashboard Cards - Recent 4 cards based on usage */}
-        <View style={styles.cardsGrid}>
-          {getDisplayCards().map((card, index) => (
-            <React.Fragment key={card.id}>
-              {renderDashboardCard(card, index)}
-            </React.Fragment>
-          ))}
-        </View>
+              {/* Quick Actions Horizontal Scroll */}
+              <View style={styles.quickActionsSection}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.utility.primaryText }]}>
+                  Quick Actions
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+                  <TouchableOpacity
+                    style={[styles.quickActionButton, { backgroundColor: theme.colors.brand.primary }]}
+                    onPress={() => setShowQuickActions(true)}
+                  >
+                     <MaterialCommunityIcons name="plus" size={24} color="#FFF" />
+                     <Text style={[styles.quickActionText, { color: '#FFF' }]}>Add Asset</Text>
+                  </TouchableOpacity>
 
-        {/* Collaborators Card - Separate from dashboard cards */}
-        <CollaboratorsCard onPress={() => handleCardPress('collaborators')} />
+                  <TouchableOpacity
+                    style={[styles.quickActionButton, { backgroundColor: theme.colors.utility.secondaryBackground }]}
+                  >
+                     <MaterialCommunityIcons name="file-upload-outline" size={24} color={theme.colors.brand.secondary} />
+                     <Text style={[styles.quickActionText, { color: theme.colors.utility.primaryText }]}>Upload</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
 
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.utility.primaryText }]}>
-            Quick Actions
-          </Text>
-          <View style={styles.quickActionButtons}>
-            <TouchableOpacity
-              style={[
-                styles.quickActionButton,
-                {
-                  backgroundColor: theme.colors.utility.secondaryBackground,
-                  borderWidth: 1,
-                  borderColor: theme.colors.brand.primary + '20',
-                }
-              ]}
-              activeOpacity={0.7}
-              onPress={() => setShowQuickActions(true)}
-            >
-              <MaterialCommunityIcons
-                name="plus-circle"
-                size={24}
-                color={theme.colors.brand.primary}
-              />
-              <Text style={[styles.quickActionText, { color: theme.colors.utility.primaryText }]}>
-                Add Asset
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.quickActionButton,
-                { 
-                  backgroundColor: theme.colors.utility.secondaryBackground,
-                  borderWidth: 1,
-                  borderColor: theme.colors.brand.secondary + '20',
-                }
-              ]}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons
-                name="file-document-outline"
-                size={24}
-                color={theme.colors.brand.secondary}
-              />
-              <Text style={[styles.quickActionText, { color: theme.colors.utility.primaryText }]}>
-                Upload Doc
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+              {/* Main Grid - All Feature Cards */}
+              <View style={styles.gridSection}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.utility.primaryText }]}>
+                  Overview
+                </Text>
+                <View style={styles.cardsGrid}>
+                  {dashboardCards.map((card) => renderDashboardCard(card))}
+                </View>
+              </View>
 
-        {/* Recent Activity Section */}
-        <View style={styles.recentSection}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.utility.primaryText }]}>
-            Recent Activity
-          </Text>
-          <View style={[
-            styles.emptyState, 
-            { 
-              backgroundColor: theme.colors.utility.secondaryBackground,
-              borderWidth: 1,
-              borderColor: theme.colors.utility.secondaryText + '10',
+              {/* Collaborators */}
+              <View style={styles.collaboratorSection}>
+                <CollaboratorsCard onPress={() => handleCardPress('collaborators')} />
+              </View>
+            </Animated.View>
+          </ScrollView>
+        </Animated.View>
+
+        {/* AI MODE LAYER */}
+        <Animated.View
+          style={[
+            styles.chatLayer,
+            {
+              opacity: chatOpacity,
+              backgroundColor: theme.colors.utility.primaryBackground,
+              paddingTop: insets.top,
             }
-          ]}>
-            <MaterialCommunityIcons
-              name="history"
-              size={48}
-              color={theme.colors.utility.secondaryText}
-            />
-            <Text style={[styles.emptyStateText, { color: theme.colors.utility.secondaryText }]}>
-              No recent activity
-            </Text>
-            <Text style={[styles.emptyStateSubtext, { color: theme.colors.utility.secondaryText }]}>
-              Your recent actions will appear here
-            </Text>
-          </View>
-        </View>
-        </ScrollView>
-      )}
+          ]}
+          pointerEvents={isAIMode ? 'auto' : 'none'}
+        >
+          {/* AI Mode Header - Dashboard Style */}
+          <View style={[styles.aiHeader, { backgroundColor: theme.colors.utility.primaryBackground }]}>
+            <View style={styles.aiHeaderContent}>
+              {/* Left: Icon with glow effect */}
+              <View style={[styles.aiIconContainer, { backgroundColor: theme.colors.brand.primary + '15' }]}>
+                <View style={[styles.aiIconGlow, { backgroundColor: theme.colors.brand.primary + '30' }]} />
+                <MaterialCommunityIcons name="robot-happy" size={28} color={theme.colors.brand.primary} />
+              </View>
 
-      {/* Quick Action Card Modal */}
-      <QuickActionCard
-        visible={showQuickActions}
-        onClose={() => setShowQuickActions(false)}
-        actions={defaultQuickActions}
-      />
+              {/* Center: Greeting & Subtitle */}
+              <View style={styles.aiHeaderText}>
+                <Text style={[styles.aiGreeting, { color: theme.colors.utility.primaryText }]}>
+                  Hi Kamal
+                </Text>
+                <Text style={[styles.aiSubtitle, { color: theme.colors.utility.secondaryText }]}>
+                  How can I help you today?
+                </Text>
+              </View>
+
+              {/* Right: Close button */}
+              <TouchableOpacity
+                style={[styles.aiCloseButton, { backgroundColor: theme.colors.utility.secondaryBackground }]}
+                onPress={handleSwitchMode}
+              >
+                <MaterialCommunityIcons name="close" size={20} color={theme.colors.utility.secondaryText} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Chat Content - Takes remaining space */}
+          <View style={styles.chatContent}>
+            <ChatModeContent userName="Kamal" />
+          </View>
+        </Animated.View>
+
+        {/* Quick Action Card Modal */}
+        <QuickActionCard
+          visible={showQuickActions}
+          onClose={() => setShowQuickActions(false)}
+          actions={defaultQuickActions}
+        />
+      </View>
     </MainLayout>
   );
 };
@@ -327,144 +458,181 @@ export const MainDashboard: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    overflow: 'hidden',
+  },
+  dashboardLayer: {
+    flex: 1,
+    zIndex: 1,
+  },
+  chatLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 65, // Above tab bar
+  },
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 20,
   },
   welcomeSection: {
-    marginBottom: 24,
-  },
-  greeting: {
-    fontSize: 16,
-  },
-  userName: {
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  aiCard: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  aiCardContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 24,
+    marginTop: 10,
   },
-  aiCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  greeting: {
+    fontSize: 16,
+    fontWeight: '500',
   },
-  aiIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  userName: {
+    fontSize: 26,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
+  profileButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  aiCardText: {
-    gap: 4,
+  assistantSection: {
+    marginBottom: 28,
   },
-  aiCardTitle: {
+  sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#fff',
+    marginBottom: 16,
+    letterSpacing: -0.3,
   },
-  aiCardSubtitle: {
+  quickActionsSection: {
+    marginBottom: 28,
+  },
+  horizontalScroll: {
+    flexDirection: 'row',
+    overflow: 'visible',
+  },
+  quickActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    marginRight: 12,
+    gap: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  quickActionText: {
+    fontWeight: '600',
     fontSize: 14,
-    color: '#ffffffcc',
+  },
+  gridSection: {
+    marginBottom: 28,
   },
   cardsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
-    marginBottom: 32,
-  },
-  card: {
-    width: (SCREEN_WIDTH - 56) / 2,
-    padding: 16,
-    borderRadius: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  cardIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  cardDescription: {
-    fontSize: 12,
-    marginBottom: 12,
-  },
-  cardArrow: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
-  },
-  quickActions: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  quickActionButtons: {
-    flexDirection: 'row',
     gap: 12,
   },
-  quickActionButton: {
-    flex: 1,
+  card: {
+    width: (SCREEN_WIDTH - 52) / 2,
+    padding: 16,
+    borderRadius: 24,
+    minHeight: 140,
+    justifyContent: 'space-between',
+    elevation: 0,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  cardIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  arrowContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    opacity: 0.6,
+  },
+  cardContent: {
+    gap: 4,
+  },
+  cardTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  cardDescription: {
+    fontSize: 13,
+    opacity: 0.7,
+  },
+  collaboratorSection: {
+    marginBottom: 30,
+  },
+  // AI Mode Header Styles
+  aiHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  aiHeaderContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
   },
-  quickActionText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  recentSection: {
-    marginBottom: 24,
-  },
-  emptyState: {
-    alignItems: 'center',
-    padding: 32,
+  aiIconContainer: {
+    width: 52,
+    height: 52,
     borderRadius: 16,
-    gap: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
   },
-  emptyStateText: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginTop: 8,
+  aiIconGlow: {
+    position: 'absolute',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    opacity: 0.5,
   },
-  emptyStateSubtext: {
+  aiHeaderText: {
+    flex: 1,
+    marginLeft: 14,
+  },
+  aiGreeting: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  aiSubtitle: {
     fontSize: 14,
-    textAlign: 'center',
+    marginTop: 2,
+  },
+  aiCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chatContent: {
+    flex: 1,
   },
 });

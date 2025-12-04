@@ -1,11 +1,13 @@
 // src/features/onboarding/screens/GoogleDriveConnectScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   Image,
+  Animated,
+  Easing,
 } from 'react-native';
 import { Text, Button } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -31,9 +33,48 @@ interface Props {
 
 export const GoogleDriveConnectScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme } = useTheme();
-  const { isFromSettings } = route.params;
+  const { isFromSettings, prefillFamily } = route.params;
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+
+  // Entrance animations
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(30)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const contentTranslateY = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 500,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(headerTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(contentOpacity, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(contentTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
 
   const handleConnect = async () => {
     setIsConnecting(true);
@@ -52,12 +93,20 @@ export const GoogleDriveConnectScreen: React.FC<Props> = ({ navigation, route })
     if (isFromSettings) {
       navigation.goBack();
     } else {
-      navigation.navigate('FamilySetup', { isFromSettings: false });
+      // Pass prefillFamily forward - this is the final delivery point!
+      navigation.navigate('FamilySetup', {
+        isFromSettings: false,
+        prefillFamily,
+      });
     }
   };
 
   const handleSkip = () => {
-    navigation.navigate('FamilySetup', { isFromSettings: false });
+    // Pass prefillFamily forward even when skipping
+    navigation.navigate('FamilySetup', {
+      isFromSettings: false,
+      prefillFamily,
+    });
   };
 
   const benefits = [
@@ -107,12 +156,20 @@ export const GoogleDriveConnectScreen: React.FC<Props> = ({ navigation, route })
         )}
 
         {/* Header */}
-        <View style={styles.header}>
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            }
+          ]}
+        >
           <View style={styles.iconContainer}>
-            <MaterialCommunityIcons 
-              name="google-drive" 
-              size={60} 
-              color="#4285F4" 
+            <MaterialCommunityIcons
+              name="google-drive"
+              size={60}
+              color="#4285F4"
             />
             {isConnected && (
               <View style={[styles.connectedBadge, { backgroundColor: theme.colors.semantic.success }]}>
@@ -120,19 +177,25 @@ export const GoogleDriveConnectScreen: React.FC<Props> = ({ navigation, route })
               </View>
             )}
           </View>
-          
+
           <Text style={[styles.title, { color: theme.colors.utility.primaryText }]}>
             {isConnected ? 'Google Drive Connected!' : 'Connect Google Drive'}
           </Text>
           <Text style={[styles.subtitle, { color: theme.colors.utility.secondaryText }]}>
-            {isConnected 
+            {isConnected
               ? 'Your family data is now backed up securely'
               : 'Backup and sync your family documents automatically'
             }
           </Text>
-        </View>
+        </Animated.View>
 
         {/* Connection Status */}
+        <Animated.View
+          style={{
+            opacity: contentOpacity,
+            transform: [{ translateY: contentTranslateY }],
+          }}
+        >
         {!isConnected ? (
           <>
             {/* Benefits List */}
@@ -226,6 +289,7 @@ export const GoogleDriveConnectScreen: React.FC<Props> = ({ navigation, route })
             />
           </>
         )}
+        </Animated.View>
 
         {/* Privacy Note */}
         <View style={[

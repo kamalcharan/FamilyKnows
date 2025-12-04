@@ -1,5 +1,5 @@
 // src/features/onboarding/screens/UserProfileScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Animated,
+  Easing,
 } from 'react-native';
 import { Text, Input, Button } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -36,13 +38,55 @@ interface Props {
 
 export const UserProfileScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme } = useTheme();
-  const { isFromSettings } = route.params;
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const { isFromSettings, prefillName, prefillFamily } = route.params;
+
+  // Parse first and last name from prefillName
+  const parseNames = (fullName?: string) => {
+    if (!fullName) return { first: '', last: '' };
+    const parts = fullName.trim().split(' ');
+    return {
+      first: parts[0] || '',
+      last: parts.slice(1).join(' ') || '',
+    };
+  };
+
+  const parsedNames = parseNames(prefillName);
+  const [firstName, setFirstName] = useState(parsedNames.first);
+  const [lastName, setLastName] = useState(parsedNames.last);
   const [selectedGender, setSelectedGender] = useState<string>('');
   const [dob, setDob] = useState<Date | undefined>(undefined);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  // Entrance animations
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(30)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 500,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(headerTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const validate = () => {
     const newErrors: {[key: string]: string} = {};
@@ -68,19 +112,26 @@ export const UserProfileScreen: React.FC<Props> = ({ navigation, route }) => {
         dob: dob?.toISOString(),
         profileImage,
       };
-      
+
       if (isFromSettings) {
         // If from settings, just go back
         navigation.goBack();
       } else {
-        // Continue onboarding
-        navigation.navigate('ThemeSelection', { isFromSettings: false });
+        // Continue onboarding - pass prefillFamily forward
+        navigation.navigate('ThemeSelection', {
+          isFromSettings: false,
+          prefillFamily,
+        });
       }
     }
   };
 
   const handleSkip = () => {
-    navigation.navigate('ThemeSelection', { isFromSettings: false });
+    // Pass prefillFamily forward even when skipping
+    navigation.navigate('ThemeSelection', {
+      isFromSettings: false,
+      prefillFamily,
+    });
   };
 
   const pickImage = async () => {

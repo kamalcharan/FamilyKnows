@@ -10,6 +10,7 @@ import {
   TextInput,
   Animated,
   Alert,
+  Easing,
 } from 'react-native';
 import { Text, Input, Button } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -42,6 +43,9 @@ const PHONE_NUMBERS_KEY = '@FamilyKnows:phoneNumbers';
 export const PhoneAuthScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme } = useTheme();
   const isFromSettings = route?.params?.isFromSettings || false;
+
+  // Extract prefill data to carry forward
+  const { prefillName, prefillFamily } = route?.params || {};
   
   // State
   const [mode, setMode] = useState<'list' | 'add' | 'verify'>('list');
@@ -59,7 +63,47 @@ export const PhoneAuthScreen: React.FC<Props> = ({ navigation, route }) => {
   const [timer, setTimer] = useState(0);
   const [canResend, setCanResend] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  
+
+  // Entrance animations
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(30)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const contentTranslateY = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    // Staggered entrance animation
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 500,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(headerTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(contentOpacity, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(contentTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
+
   // OTP input refs
   const inputRefs = [
     useRef<TextInput>(null),
@@ -251,7 +295,12 @@ export const PhoneAuthScreen: React.FC<Props> = ({ navigation, route }) => {
       if (isFromSettings) {
         navigation.goBack();
       } else {
-        navigation.navigate('UserProfile', { isFromSettings: false });
+        // Pass prefill data forward to UserProfile
+        navigation.navigate('UserProfile', {
+          isFromSettings: false,
+          prefillName,
+          prefillFamily,
+        });
       }
     }
   };
@@ -265,7 +314,12 @@ export const PhoneAuthScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const handleSkip = () => {
-    navigation.navigate('UserProfile', { isFromSettings: false });
+    // Pass prefill data forward even when skipping
+    navigation.navigate('UserProfile', {
+      isFromSettings: false,
+      prefillName,
+      prefillFamily,
+    });
   };
 
   const handleBack = () => {
@@ -548,15 +602,23 @@ export const PhoneAuthScreen: React.FC<Props> = ({ navigation, route }) => {
         )}
 
         {/* Header */}
-        <View style={styles.header}>
-          <MaterialCommunityIcons 
-            name={mode === 'verify' ? "message-text-lock" : mode === 'list' ? "phone-settings" : "phone-check"} 
-            size={60} 
-            color={theme.colors.brand.primary} 
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            }
+          ]}
+        >
+          <MaterialCommunityIcons
+            name={mode === 'verify' ? "message-text-lock" : mode === 'list' ? "phone-settings" : "phone-check"}
+            size={60}
+            color={theme.colors.brand.primary}
           />
           <Text style={[styles.title, { color: theme.colors.utility.primaryText }]}>
-            {mode === 'verify' 
-              ? 'Enter Verification Code' 
+            {mode === 'verify'
+              ? 'Enter Verification Code'
               : mode === 'list'
               ? 'Manage Phone Numbers'
               : editingNumber
@@ -565,19 +627,26 @@ export const PhoneAuthScreen: React.FC<Props> = ({ navigation, route }) => {
             }
           </Text>
           <Text style={[styles.subtitle, { color: theme.colors.utility.secondaryText }]}>
-            {mode === 'verify' 
+            {mode === 'verify'
               ? `We've sent a 4-digit code to\n${selectedCountry.dialCode} ${phoneNumber}`
               : mode === 'list'
               ? 'Add or manage your phone numbers'
               : "We'll send you a verification code to confirm your number"
             }
           </Text>
-        </View>
+        </Animated.View>
 
         {/* Content based on mode */}
-        {mode === 'list' && renderPhoneList()}
-        {mode === 'add' && renderAddNumber()}
-        {mode === 'verify' && renderOTP()}
+        <Animated.View
+          style={{
+            opacity: contentOpacity,
+            transform: [{ translateY: contentTranslateY }],
+          }}
+        >
+          {mode === 'list' && renderPhoneList()}
+          {mode === 'add' && renderAddNumber()}
+          {mode === 'verify' && renderOTP()}
+        </Animated.View>
 
         {/* Skip Option - Only show during onboarding */}
         {!isFromSettings && savedNumbers.length === 0 && mode !== 'list' && (

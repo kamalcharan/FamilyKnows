@@ -1,11 +1,13 @@
 // src/features/onboarding/screens/LanguageSelectionScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Animated,
+  Easing,
 } from 'react-native';
 import { Text, Button } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -33,23 +35,61 @@ interface Props {
 
 export const LanguageSelectionScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme } = useTheme();
-  const { isFromSettings } = route.params;
+  const { isFromSettings, prefillFamily } = route.params;
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [showKeyboardGuide, setShowKeyboardGuide] = useState(false);
   const [testInput, setTestInput] = useState('');
 
+  // Entrance animations
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(30)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 500,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(headerTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   const handleContinue = () => {
     // Save language preference (we'll implement this with AsyncStorage/SQLite later)
-    
+
     if (isFromSettings) {
       navigation.goBack();
     } else {
-      navigation.navigate('GoogleDriveConnect', { isFromSettings: false });
+      // Pass prefillFamily forward
+      navigation.navigate('GoogleDriveConnect', {
+        isFromSettings: false,
+        prefillFamily,
+      });
     }
   };
 
   const handleSkip = () => {
-    navigation.navigate('GoogleDriveConnect', { isFromSettings: false });
+    // Pass prefillFamily forward even when skipping
+    navigation.navigate('GoogleDriveConnect', {
+      isFromSettings: false,
+      prefillFamily,
+    });
   };
 
   const renderLanguageOption = (language: Language) => {

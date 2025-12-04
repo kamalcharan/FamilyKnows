@@ -1,33 +1,40 @@
 // src/navigation/types.ts
 
+// Prefill data passed from StoryOnboarding through the entire flow
+export type OnboardingPrefillData = {
+  prefillName?: string;    // User's name from Story
+  prefillFamily?: string;  // Family name from Story
+};
+
 // Auth Stack - includes both auth and onboarding screens
 export type AuthStackParamList = {
   // Auth screens
   Splash: undefined;
   Intro: undefined;
-  Login: undefined;
-  
-  // Onboarding screens (in order)
-  PhoneAuth: { isFromSettings?: boolean };
-  UserProfile: { isFromSettings: boolean };
-  ThemeSelection: { isFromSettings: boolean };
-  LanguageSelection: { isFromSettings: boolean };
-  GoogleDriveConnect: { isFromSettings: boolean };
-  FamilySetup: { isFromSettings: boolean };
+  StoryOnboarding: undefined;
+  Login: { userName?: string; familyName?: string };
+
+  // Onboarding screens (in order) - all carry prefill data
+  PhoneAuth: { isFromSettings?: boolean } & OnboardingPrefillData;
+  UserProfile: { isFromSettings: boolean } & OnboardingPrefillData;
+  ThemeSelection: { isFromSettings: boolean } & OnboardingPrefillData;
+  LanguageSelection: { isFromSettings: boolean } & OnboardingPrefillData;
+  GoogleDriveConnect: { isFromSettings: boolean } & OnboardingPrefillData;
+  FamilySetup: { isFromSettings: boolean } & OnboardingPrefillData;
   Pricing: undefined;
-  
+
   // Main app
   Main: undefined;
 };
 
 // Onboarding Stack - for type safety in onboarding screens
 export type OnboardingStackParamList = {
-  PhoneAuth: { isFromSettings?: boolean };
-  UserProfile: { isFromSettings: boolean };
-  ThemeSelection: { isFromSettings: boolean };
-  LanguageSelection: { isFromSettings: boolean };
-  GoogleDriveConnect: { isFromSettings: boolean };
-  FamilySetup: { isFromSettings: boolean };
+  PhoneAuth: { isFromSettings?: boolean } & OnboardingPrefillData;
+  UserProfile: { isFromSettings: boolean } & OnboardingPrefillData;
+  ThemeSelection: { isFromSettings: boolean } & OnboardingPrefillData;
+  LanguageSelection: { isFromSettings: boolean } & OnboardingPrefillData;
+  GoogleDriveConnect: { isFromSettings: boolean } & OnboardingPrefillData;
+  FamilySetup: { isFromSettings: boolean } & OnboardingPrefillData;
 };
 
 export type MainTabParamList = {
