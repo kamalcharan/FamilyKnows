@@ -123,9 +123,9 @@ export const SplashScreen: React.FC = () => {
       })
     ).start();
 
-    // Navigate after delay
+    // Navigate after delay - Go to Story Onboarding (interactive journey)
     const timer = setTimeout(() => {
-      navigation.replace('Intro');
+      navigation.replace('StoryOnboarding');
     }, 3000);
 
     return () => clearTimeout(timer);
