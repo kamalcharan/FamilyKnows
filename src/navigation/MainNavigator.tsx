@@ -15,6 +15,7 @@ import { PricingScreen } from '../features/onboarding/screens/PricingScreen';
 // Feature screens
 import { AssetsHubScreen } from '../features/assets';
 import { AssetDetailScreen } from '../features/assets/screens/AssetDetailScreen';
+import { AssetDashboardScreen } from '../features/assets/screens/AssetDashboardScreen';
 import { HealthTimelineScreen, HealthRecordDetailScreen } from '../features/health';
 import { CollaboratorsOrbitScreen } from '../features/collaborators';
 import { DocumentsVaultScreen } from '../features/documents';
@@ -24,6 +25,7 @@ export type MainStackParamList = {
   // Feature screens
   AssetsHub: undefined;
   AssetDetail: { assetId: string };
+  AssetDashboard: { assetId: string };
   HealthTimeline: undefined;
   HealthRecordDetail: { recordId: string };
   CollaboratorsOrbit: undefined;
@@ -59,6 +61,11 @@ export const MainNavigator: React.FC = () => {
       <Stack.Screen
         name="AssetDetail"
         component={AssetDetailScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="AssetDashboard"
+        component={AssetDashboardScreen}
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen

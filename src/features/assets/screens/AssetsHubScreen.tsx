@@ -1,13 +1,15 @@
 // src/features/assets/screens/AssetsHubScreen.tsx
-import React, { useRef, useState } from 'react';
+// Asset Lifecycle Management - Focus on "Health" not "Wealth"
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Animated,
   Image,
   StatusBar,
+  Animated,
+  Easing,
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -20,116 +22,164 @@ const FAMILY_MEMBERS = [
   { id: 'all', name: 'All', avatar: null, color: '#6B7280' },
   { id: 'dad', name: 'Kamal', avatar: 'https://i.pravatar.cc/150?u=dad', color: '#3B82F6' },
   { id: 'mom', name: 'Priya', avatar: 'https://i.pravatar.cc/150?u=mom', color: '#EC4899' },
-  { id: 'joint', name: 'Joint', avatar: null, icon: 'account-group', color: '#8B5CF6' },
+  { id: 'joint', name: 'Shared', avatar: null, icon: 'account-group', color: '#8B5CF6' },
 ];
 
-// --- MOCK ASSETS WITH OWNERSHIP ---
+// --- MOCK ASSETS: Focused on "Health" not "Wealth" ---
 const MY_ASSETS = [
   {
     id: '1',
-    title: 'Dream Home',
-    type: 'Real Estate',
-    value: '₹1.2 Cr',
-    growth: '+12%',
-    icon: 'home-city',
-    color: '#4F46E5',
-    location: 'Bangalore, KA',
-    ownerId: 'joint', // JOINT ASSET
-    ownerLabel: 'Joint',
+    title: 'Luminous Inverter',
+    category: 'Electronics',
+    location: 'Utility Area, 1st Floor',
+    status: 'critical',
+    nextCycle: 'Distilled Water Refill',
+    dueDate: 'Overdue (2 Days)',
+    daysUntilDue: -2,
+    image: 'https://rukminim2.flixcart.com/image/850/1000/xif0q/inverter/y/i/n/-original-imagqhyq9g5g5z8h.jpeg?q=90',
+    icon: 'car-battery',
+    ownerId: 'joint',
+    hasAmc: true,
   },
   {
     id: '2',
-    title: 'Tata Safari',
-    type: 'Vehicle',
-    value: '₹18.5 L',
-    growth: '-8%',
-    icon: 'car-suv',
-    color: '#059669',
-    location: 'KA-01-MJ-1234',
-    nextAction: 'Insurance Due',
-    ownerId: 'dad', // DAD's ASSET
-    ownerLabel: 'Kamal',
+    title: 'Samsung Washing Machine',
+    category: 'Appliances',
+    location: 'Laundry Room',
+    status: 'good',
+    nextCycle: 'AMC Expiry',
+    dueDate: 'Nov 15, 2025',
+    daysUntilDue: 350,
+    image: 'https://images.samsung.com/is/image/samsung/p6pim/in/ww80t4020ce1tl/gallery/in-front-loading-washer-ww80t4020ce1tl-ww80t4020ce-tl-532860477?$684_547_PNG$',
+    icon: 'washing-machine',
+    ownerId: 'mom',
+    hasAmc: true,
   },
   {
     id: '3',
-    title: 'SGB Bonds',
-    type: 'Gold',
-    value: '₹5.4 L',
-    growth: '+22%',
-    icon: 'gold',
-    color: '#D97706',
-    location: 'Digital Vault',
-    ownerId: 'mom', // MOM's ASSET
-    ownerLabel: 'Priya',
+    title: 'Tata Safari',
+    category: 'Vehicle',
+    location: 'Garage - Dream Home',
+    status: 'warning',
+    nextCycle: 'General Service',
+    dueDate: 'Due in 15 Days',
+    daysUntilDue: 15,
+    image: 'https://imgd.aeplcdn.com/664x374/n/cw/ec/142739/safari-exterior-right-front-three-quarter-2.jpeg?isig=0&q=80',
+    icon: 'car-suv',
+    ownerId: 'dad',
+    hasAmc: false,
   },
   {
     id: '4',
-    title: 'Fixed Deposit',
-    type: 'Savings',
-    value: '₹25 L',
-    growth: '+7%',
-    icon: 'bank',
-    color: '#0891B2',
-    location: 'HDFC Bank',
+    title: 'Daikin AC (3 units)',
+    category: 'HVAC',
+    location: 'Multiple Rooms',
+    status: 'good',
+    nextCycle: 'Filter Cleaning',
+    dueDate: 'Jan 2025',
+    daysUntilDue: 60,
+    image: 'https://www.daikin.co.in/sites/default/files/styles/catalog_large/public/2023-01/FTKF_0.png?itok=VLGhLxR4',
+    icon: 'air-conditioner',
     ownerId: 'joint',
-    ownerLabel: 'Joint',
+    hasAmc: true,
   },
   {
     id: '5',
     title: 'Honda Activa',
-    type: 'Vehicle',
-    value: '₹85,000',
-    growth: '-15%',
+    category: 'Vehicle',
+    location: 'Parking - Ground Floor',
+    status: 'warning',
+    nextCycle: 'Insurance Renewal',
+    dueDate: 'Due in 10 Days',
+    daysUntilDue: 10,
+    image: 'https://bd.gaadicdn.com/processedimages/honda/activa-6g/640X309/activa-6g6543d1fd2c9a.jpg',
     icon: 'motorbike',
-    color: '#059669',
-    location: 'KA-01-AB-5678',
     ownerId: 'mom',
-    ownerLabel: 'Priya',
+    hasAmc: false,
   },
 ];
 
 export const AssetsHubScreen: React.FC = () => {
   const { theme } = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const scrollY = useRef(new Animated.Value(0)).current;
 
-  // State for filtering
+  // State
   const [selectedMember, setSelectedMember] = useState('all');
-
-  const filteredAssets = selectedMember === 'all'
-    ? MY_ASSETS
-    : MY_ASSETS.filter(a => a.ownerId === selectedMember);
-
-  // Helper to get member details
-  const getMemberDetails = (id: string) => FAMILY_MEMBERS.find(m => m.id === id);
-
-  // Calculate net worth for selected member
-  const calculateNetWorth = () => {
-    const assets = selectedMember === 'all' ? MY_ASSETS : filteredAssets;
-    // Simple calculation for demo - in reality would parse values
-    if (selectedMember === 'all') return '₹1,43,90,000';
-    if (selectedMember === 'dad') return '₹18,50,000';
-    if (selectedMember === 'mom') return '₹6,25,000';
-    if (selectedMember === 'joint') return '₹1,45,00,000';
-    return '₹0';
-  };
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'critical' | 'warning' | 'good'>('all');
 
   // Animations
-  const headerHeight = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [320, 180],
-    extrapolate: 'clamp',
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const cardsOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(headerOpacity, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardsOpacity, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  // Filtered assets
+  const filteredAssets = MY_ASSETS.filter((asset) => {
+    const memberMatch = selectedMember === 'all' || asset.ownerId === selectedMember;
+    const statusMatch = selectedFilter === 'all' || asset.status === selectedFilter;
+    return memberMatch && statusMatch;
   });
 
-  const netWorthOpacity = scrollY.interpolate({
-    inputRange: [0, 60],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
+  // Calculate maintenance summary
+  const maintenanceSummary = {
+    critical: MY_ASSETS.filter((a) => a.status === 'critical').length,
+    warning: MY_ASSETS.filter((a) => a.status === 'warning').length,
+    good: MY_ASSETS.filter((a) => a.status === 'good').length,
+  };
+
+  // Helper to get member details
+  const getMemberDetails = (id: string) => FAMILY_MEMBERS.find((m) => m.id === id);
+
+  // Status helpers
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'good':
+        return theme.colors.semantic.success;
+      case 'warning':
+        return theme.colors.semantic.warning;
+      case 'critical':
+        return theme.colors.semantic.error;
+      default:
+        return theme.colors.utility.secondaryText;
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'good':
+        return 'check-circle';
+      case 'warning':
+        return 'alert-circle';
+      case 'critical':
+        return 'alert-octagon';
+      default:
+        return 'help-circle';
+    }
+  };
 
   const renderMemberFilter = () => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.memberFilterScroll}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.memberFilterScroll}
+      contentContainerStyle={styles.memberFilterContent}
+    >
       {FAMILY_MEMBERS.map((member) => {
         const isSelected = selectedMember === member.id;
         return (
@@ -137,8 +187,8 @@ export const AssetsHubScreen: React.FC = () => {
             key={member.id}
             style={[
               styles.memberChip,
-              isSelected && { backgroundColor: theme.colors.brand.primary },
-              !isSelected && { backgroundColor: 'rgba(255,255,255,0.15)' }
+              isSelected && { backgroundColor: '#FFF' },
+              !isSelected && { backgroundColor: 'rgba(255,255,255,0.15)' },
             ]}
             onPress={() => setSelectedMember(member.id)}
             activeOpacity={0.8}
@@ -146,11 +196,20 @@ export const AssetsHubScreen: React.FC = () => {
             {member.avatar ? (
               <Image source={{ uri: member.avatar }} style={styles.memberAvatarSmall} />
             ) : (
-              <View style={[styles.memberAvatarSmall, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                 <MaterialCommunityIcons name={(member.icon || 'all-inclusive') as any} size={14} color="#FFF" />
+              <View style={[styles.memberAvatarSmall, { backgroundColor: isSelected ? member.color : 'rgba(255,255,255,0.3)' }]}>
+                <MaterialCommunityIcons
+                  name={(member.icon || 'all-inclusive') as any}
+                  size={14}
+                  color={isSelected ? '#FFF' : '#FFF'}
+                />
               </View>
             )}
-            <Text style={[styles.memberName, { color: isSelected ? '#FFF' : 'rgba(255,255,255,0.8)' }]}>
+            <Text
+              style={[
+                styles.memberName,
+                { color: isSelected ? theme.colors.brand.primary : 'rgba(255,255,255,0.9)' },
+              ]}
+            >
               {member.name}
             </Text>
           </TouchableOpacity>
@@ -159,63 +218,129 @@ export const AssetsHubScreen: React.FC = () => {
     </ScrollView>
   );
 
+  const renderStatusFilter = () => (
+    <View style={styles.statusFilterRow}>
+      {[
+        { key: 'all', label: 'All', count: MY_ASSETS.length },
+        { key: 'critical', label: 'Critical', count: maintenanceSummary.critical },
+        { key: 'warning', label: 'Upcoming', count: maintenanceSummary.warning },
+        { key: 'good', label: 'Healthy', count: maintenanceSummary.good },
+      ].map((filter) => (
+        <TouchableOpacity
+          key={filter.key}
+          style={[
+            styles.statusFilterChip,
+            {
+              backgroundColor:
+                selectedFilter === filter.key
+                  ? theme.colors.utility.primaryBackground
+                  : 'transparent',
+              borderColor:
+                selectedFilter === filter.key
+                  ? theme.colors.utility.primaryBackground
+                  : 'rgba(255,255,255,0.3)',
+            },
+          ]}
+          onPress={() => setSelectedFilter(filter.key as any)}
+        >
+          <Text
+            style={[
+              styles.statusFilterText,
+              {
+                color:
+                  selectedFilter === filter.key
+                    ? theme.colors.brand.primary
+                    : 'rgba(255,255,255,0.8)',
+              },
+            ]}
+          >
+            {filter.label}
+          </Text>
+          <View
+            style={[
+              styles.statusFilterBadge,
+              {
+                backgroundColor:
+                  selectedFilter === filter.key
+                    ? theme.colors.brand.primary
+                    : 'rgba(255,255,255,0.2)',
+              },
+            ]}
+          >
+            <Text style={styles.statusFilterCount}>{filter.count}</Text>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
   const renderAssetCard = (item: typeof MY_ASSETS[0], index: number) => {
     const owner = getMemberDetails(item.ownerId);
+    const statusColor = getStatusColor(item.status);
 
     return (
       <TouchableOpacity
         key={item.id}
         activeOpacity={0.9}
-        style={[
-          styles.assetCard,
-          { backgroundColor: theme.colors.utility.secondaryBackground }
-        ]}
-        onPress={() => navigation.navigate('AssetDetail' as any, { assetId: item.id })}
+        style={[styles.assetCard, { backgroundColor: theme.colors.utility.secondaryBackground }]}
+        onPress={() => navigation.navigate('AssetDashboard', { assetId: item.id })}
       >
-        <View style={styles.cardHeader}>
-          <View style={[styles.iconBox, { backgroundColor: item.color + '15' }]}>
-            <MaterialCommunityIcons name={item.icon as any} size={28} color={item.color} />
-          </View>
+        {/* Status Indicator Line */}
+        <View style={[styles.statusLine, { backgroundColor: statusColor }]} />
 
-          {/* OWNERSHIP BADGE */}
-          <View style={[styles.ownerBadge, { backgroundColor: theme.colors.utility.primaryBackground }]}>
-             {owner?.avatar ? (
-               <Image source={{ uri: owner.avatar }} style={styles.ownerAvatarTiny} />
-             ) : (
-               <MaterialCommunityIcons name="account-group" size={14} color={theme.colors.utility.secondaryText} />
-             )}
-             <Text style={[styles.ownerName, { color: theme.colors.utility.secondaryText }]}>
-               {owner?.name}
-             </Text>
-          </View>
-        </View>
+        <View style={styles.cardContent}>
+          {/* Top Row: Image + Info */}
+          <View style={styles.cardTopRow}>
+            <Image source={{ uri: item.image }} style={styles.cardImage} />
 
-        <View style={styles.cardBody}>
-            <Text style={[styles.assetTitle, { color: theme.colors.utility.primaryText }]}>
-                {item.title}
-            </Text>
-            <Text style={[styles.assetLocation, { color: theme.colors.utility.secondaryText }]}>
-                {item.location}
-            </Text>
-            <View style={styles.cardFooter}>
-                <Text style={[styles.assetValue, { color: theme.colors.utility.primaryText }]}>
-                    {item.value}
+            <View style={styles.cardInfo}>
+              <View style={styles.cardHeader}>
+                <Text style={[styles.cardTitle, { color: theme.colors.utility.primaryText }]} numberOfLines={1}>
+                  {item.title}
                 </Text>
-                <Text style={[
-                   styles.growthText,
-                   { color: item.growth.startsWith('+') ? theme.colors.semantic.success : theme.colors.semantic.error }
-                 ]}>
-                   {item.growth}
-                 </Text>
-            </View>
-            {item.nextAction && (
-              <View style={[styles.actionTag, { backgroundColor: theme.colors.semantic.warning + '15' }]}>
-                <MaterialCommunityIcons name="alert-circle-outline" size={14} color={theme.colors.semantic.warning} />
-                <Text style={[styles.actionText, { color: theme.colors.semantic.warning }]}>
-                  {item.nextAction}
+                {item.hasAmc && (
+                  <View style={[styles.amcBadge, { backgroundColor: '#3B82F620' }]}>
+                    <Text style={styles.amcBadgeText}>AMC</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.locationRow}>
+                <MaterialCommunityIcons name="map-marker-outline" size={14} color={theme.colors.utility.secondaryText} />
+                <Text style={[styles.locationText, { color: theme.colors.utility.secondaryText }]} numberOfLines={1}>
+                  {item.location}
                 </Text>
               </View>
-            )}
+
+              {/* Ownership Badge */}
+              <View style={styles.ownerRow}>
+                {owner?.avatar ? (
+                  <Image source={{ uri: owner.avatar }} style={styles.ownerAvatarTiny} />
+                ) : (
+                  <View style={[styles.ownerAvatarTiny, { backgroundColor: owner?.color || '#666' }]}>
+                    <MaterialCommunityIcons name="account-group" size={10} color="#FFF" />
+                  </View>
+                )}
+                <Text style={[styles.ownerName, { color: theme.colors.utility.secondaryText }]}>
+                  {owner?.name}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Bottom Row: Next Cycle */}
+          <View style={[styles.cycleContainer, { backgroundColor: statusColor + '10' }]}>
+            <View style={styles.cycleLeft}>
+              <MaterialCommunityIcons name={getStatusIcon(item.status) as any} size={18} color={statusColor} />
+              <View>
+                <Text style={[styles.cycleLabel, { color: theme.colors.utility.secondaryText }]}>
+                  Next: {item.nextCycle}
+                </Text>
+                <Text style={[styles.cycleDate, { color: statusColor }]}>{item.dueDate}</Text>
+              </View>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={24} color={theme.colors.utility.secondaryText} />
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -225,97 +350,82 @@ export const AssetsHubScreen: React.FC = () => {
     <View style={[styles.container, { backgroundColor: theme.colors.utility.primaryBackground }]}>
       <StatusBar barStyle="light-content" />
 
-      {/* ANIMATED HEADER WITH MEMBER FILTER */}
+      {/* HEADER */}
       <Animated.View
         style={[
           styles.header,
-          {
-            height: headerHeight,
-            backgroundColor: theme.colors.brand.primary,
-            paddingTop: insets.top
-          }
+          { paddingTop: insets.top, backgroundColor: theme.colors.brand.primary, opacity: headerOpacity },
         ]}
       >
-        {/* Pattern Background Overlay */}
+        {/* Pattern Background */}
         <View style={styles.patternOverlay}>
-          <MaterialCommunityIcons name="finance" size={300} color="#FFFFFF08" style={{ position: 'absolute', right: -50, top: -30 }} />
+          <MaterialCommunityIcons name="tools" size={250} color="#FFFFFF08" style={{ position: 'absolute', right: -40, top: -20 }} />
         </View>
 
         <View style={styles.headerContent}>
           {/* Nav Bar */}
           <View style={styles.navBar}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
               <MaterialCommunityIcons name="arrow-left" size={24} color="#FFF" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Family Assets</Text>
-            <TouchableOpacity style={styles.addButton}>
+            <Text style={styles.headerTitle}>Assets & Maintenance</Text>
+            <TouchableOpacity style={styles.iconButton}>
               <MaterialCommunityIcons name="plus" size={24} color="#FFF" />
             </TouchableOpacity>
           </View>
 
-          {/* Member Filter Section */}
-          <View style={styles.filterSection}>
-            {renderMemberFilter()}
-          </View>
+          {/* Member Filter */}
+          {renderMemberFilter()}
 
-          {/* Total Value for Selected Member (Fades on scroll) */}
-          <Animated.View style={[styles.totalValueContainer, { opacity: netWorthOpacity }]}>
-            <Text style={styles.totalLabel}>
-              {selectedMember === 'all' ? 'Family Net Worth' : `${getMemberDetails(selectedMember)?.name}'s Net Worth`}
-            </Text>
-            <Text style={styles.totalValue}>{calculateNetWorth()}</Text>
-            <View style={styles.trendIndicator}>
-              <MaterialCommunityIcons name="trending-up" size={16} color="#4ADE80" />
-              <Text style={styles.trendText}>+14% this year</Text>
-            </View>
-          </Animated.View>
+          {/* Maintenance Summary / Status Filters */}
+          {renderStatusFilter()}
         </View>
       </Animated.View>
 
-      {/* SCROLLABLE CONTENT */}
-      <ScrollView
+      {/* ASSET LIST */}
+      <Animated.ScrollView
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
-        scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: false }
-        )}
+        style={{ opacity: cardsOpacity }}
       >
         {filteredAssets.length > 0 ? (
-          filteredAssets.map((asset, index) => renderAssetCard(asset, index))
+          <>
+            <Text style={[styles.sectionTitle, { color: theme.colors.utility.primaryText }]}>
+              {selectedFilter === 'all' ? 'All Assets' : `${selectedFilter.charAt(0).toUpperCase() + selectedFilter.slice(1)} Assets`}
+            </Text>
+            {filteredAssets.map((asset, index) => renderAssetCard(asset, index))}
+          </>
         ) : (
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="package-variant" size={60} color={theme.colors.utility.secondaryText + '50'} />
             <Text style={[styles.emptyText, { color: theme.colors.utility.secondaryText }]}>
-              No assets found for this member
+              No assets found
             </Text>
           </View>
         )}
-      </ScrollView>
 
-      {/* Floating Action Button */}
+        <View style={{ height: 100 }} />
+      </Animated.ScrollView>
+
+      {/* FAB: Add Asset */}
       <TouchableOpacity
-        style={[
-          styles.fab,
-          { backgroundColor: theme.colors.brand.primary, bottom: insets.bottom + 20 }
-        ]}
+        style={[styles.fab, { backgroundColor: theme.colors.brand.primary, bottom: insets.bottom + 20 }]}
         activeOpacity={0.8}
       >
-        <MaterialCommunityIcons name="microphone" size={28} color="#FFF" />
+        <MaterialCommunityIcons name="camera-plus" size={26} color="#FFF" />
       </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+
+  // Header
   header: {
-    overflow: 'hidden',
-    borderBottomRightRadius: 32,
-    borderBottomLeftRadius: 32,
+    paddingBottom: 20,
+    borderBottomRightRadius: 28,
+    borderBottomLeftRadius: 28,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -325,40 +435,31 @@ const styles = StyleSheet.create({
   },
   patternOverlay: {
     ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
   },
   headerContent: {
-    flex: 1,
     paddingHorizontal: 20,
   },
   navBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
     marginTop: 10,
-  },
-  backButton: {
-    padding: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 12,
-  },
-  addButton: {
-    padding: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 12,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFF',
-  },
-  filterSection: {
     marginBottom: 16,
   },
-  memberFilterScroll: {
-    marginHorizontal: -20,
-    paddingHorizontal: 20,
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: '#FFF' },
+
+  // Member Filter
+  memberFilterScroll: { marginBottom: 16 },
+  memberFilterContent: { paddingRight: 20 },
   memberChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -375,140 +476,98 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  memberName: {
-    fontWeight: '600',
-    fontSize: 13,
+  memberName: { fontWeight: '600', fontSize: 13 },
+
+  // Status Filter
+  statusFilterRow: {
+    flexDirection: 'row',
+    gap: 8,
   },
-  totalValueContainer: {
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  totalLabel: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 13,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  totalValue: {
-    color: '#FFF',
-    fontSize: 32,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  trendIndicator: {
+  statusFilterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    paddingVertical: 6,
     borderRadius: 20,
-    gap: 4,
-    marginTop: 8,
+    borderWidth: 1,
+    gap: 6,
   },
-  trendText: {
-    color: '#4ADE80',
-    fontSize: 13,
-    fontWeight: '600',
+  statusFilterText: { fontSize: 12, fontWeight: '600' },
+  statusFilterBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
   },
-  listContainer: {
-    padding: 20,
-    paddingBottom: 100,
-    gap: 16,
-  },
+  statusFilterCount: { color: '#FFF', fontSize: 11, fontWeight: '700' },
+
+  // List
+  listContent: { padding: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
+
+  // Asset Card
   assetCard: {
-    borderRadius: 20,
-    padding: 16,
-    elevation: 2,
+    borderRadius: 18,
+    marginBottom: 16,
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    overflow: 'hidden',
   },
-  cardHeader: {
+  statusLine: {
+    height: 4,
+    width: '100%',
+  },
+  cardContent: { padding: 14 },
+  cardTopRow: { flexDirection: 'row', marginBottom: 12 },
+  cardImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+  },
+  cardInfo: { flex: 1, marginLeft: 14, justifyContent: 'center' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  cardTitle: { fontSize: 16, fontWeight: '700', flex: 1 },
+  amcBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  amcBadgeText: { color: '#3B82F6', fontSize: 10, fontWeight: '700' },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6 },
+  locationText: { fontSize: 12, flex: 1 },
+  ownerRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  ownerAvatarTiny: { width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
+  ownerName: { fontSize: 12, fontWeight: '500' },
+
+  // Cycle Container
+  cycleContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    padding: 12,
+    borderRadius: 12,
   },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  ownerBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 6,
-    paddingRight: 10,
-    borderRadius: 14,
-    gap: 6,
-  },
-  ownerAvatarTiny: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-  },
-  ownerName: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  cardBody: {
-    gap: 4,
-  },
-  assetTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  assetLocation: {
-    fontSize: 13,
-    opacity: 0.6,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  assetValue: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  growthText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  actionTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    gap: 6,
-    marginTop: 10,
-    alignSelf: 'flex-start',
-  },
-  actionText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    gap: 16,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
+  cycleLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  cycleLabel: { fontSize: 12 },
+  cycleDate: { fontSize: 14, fontWeight: '700', marginTop: 2 },
+
+  // Empty State
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, gap: 16 },
+  emptyText: { fontSize: 16, fontWeight: '500' },
+
+  // FAB
   fab: {
     position: 'absolute',
     right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 6,
