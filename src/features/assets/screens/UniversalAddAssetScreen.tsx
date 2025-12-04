@@ -11,7 +11,6 @@ import {
   Platform,
   Animated,
   Image,
-  Modal,
 } from 'react-native';
 import { Text, Button, Divider } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -46,7 +45,6 @@ export const UniversalAddAssetScreen: React.FC = () => {
   // Linked Member State
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [isSharedAsset, setIsSharedAsset] = useState(false);
-  const [showMemberPicker, setShowMemberPicker] = useState(false);
 
   // Dynamic Fields State
   const [formData, setFormData] = useState<{ [key: string]: string }>({});
@@ -102,7 +100,7 @@ export const UniversalAddAssetScreen: React.FC = () => {
 
   const getTypeDetails = () => ENTITY_TYPES.find(t => t.id === selectedType);
 
-  // --- MEMBER SELECTOR (with Family Shared toggle) ---
+  // --- MEMBER SELECTOR (Inline Radio Style) ---
   const renderMemberSelector = () => (
     <View style={styles.inputGroup}>
       <View style={styles.memberSelectorHeader}>
@@ -138,107 +136,64 @@ export const UniversalAddAssetScreen: React.FC = () => {
           </View>
         </View>
       ) : (
-        <TouchableOpacity
-          style={[
-            styles.memberSelectButton,
-            {
-              borderColor: selectedMember ? selectedMember.color : theme.colors.utility.secondaryText + '30',
-              backgroundColor: selectedMember ? selectedMember.color + '10' : theme.colors.utility.secondaryBackground
-            }
-          ]}
-          onPress={() => setShowMemberPicker(true)}
-        >
-          {selectedMember ? (
-            <>
-              {selectedMember.avatar ? (
-                <Image source={{ uri: selectedMember.avatar }} style={styles.memberSelectAvatar} />
-              ) : (
-                <View style={[styles.memberSelectAvatar, { backgroundColor: selectedMember.color }]}>
-                  <Text style={styles.memberSelectInitial}>{selectedMember.name.charAt(0)}</Text>
+        <View style={styles.memberRadioContainer}>
+          {members.map((member) => {
+            const isSelected = selectedMemberId === member.id;
+            return (
+              <TouchableOpacity
+                key={member.id}
+                style={[
+                  styles.memberRadioItem,
+                  {
+                    borderColor: isSelected ? member.color : theme.colors.utility.secondaryText + '20',
+                    backgroundColor: isSelected ? member.color + '12' : theme.colors.utility.secondaryBackground,
+                  }
+                ]}
+                onPress={() => setSelectedMemberId(member.id)}
+                activeOpacity={0.7}
+              >
+                {/* Radio Circle */}
+                <View style={[
+                  styles.radioCircle,
+                  { borderColor: isSelected ? member.color : theme.colors.utility.secondaryText + '40' }
+                ]}>
+                  {isSelected && (
+                    <View style={[styles.radioCircleFilled, { backgroundColor: member.color }]} />
+                  )}
                 </View>
-              )}
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={[styles.memberSelectName, { color: theme.colors.utility.primaryText }]}>
-                  {selectedMember.displayRelationship}
-                </Text>
-                <Text style={[styles.memberSelectRole, { color: theme.colors.utility.secondaryText }]}>
-                  {selectedMember.name} • {getRoleLabel}
-                </Text>
-              </View>
-              <MaterialCommunityIcons name="chevron-down" size={20} color={theme.colors.utility.secondaryText} />
-            </>
-          ) : (
-            <>
-              <View style={[styles.memberSelectPlaceholder, { backgroundColor: theme.colors.utility.secondaryText + '20' }]}>
-                <MaterialCommunityIcons name="account" size={20} color={theme.colors.utility.secondaryText} />
-              </View>
-              <Text style={[styles.memberSelectText, { color: theme.colors.utility.secondaryText }]}>
-                Select Family Member
-              </Text>
-              <MaterialCommunityIcons name="chevron-down" size={20} color={theme.colors.utility.secondaryText} />
-            </>
-          )}
-        </TouchableOpacity>
+
+                {/* Avatar */}
+                {member.avatar ? (
+                  <Image source={{ uri: member.avatar }} style={styles.memberRadioAvatar} />
+                ) : (
+                  <View style={[styles.memberRadioAvatar, { backgroundColor: member.color }]}>
+                    <Text style={styles.memberRadioInitial}>{member.name.charAt(0)}</Text>
+                  </View>
+                )}
+
+                {/* Info */}
+                <View style={styles.memberRadioInfo}>
+                  <Text style={[
+                    styles.memberRadioName,
+                    { color: isSelected ? member.color : theme.colors.utility.primaryText }
+                  ]}>
+                    {member.displayRelationship}
+                  </Text>
+                  <Text style={[styles.memberRadioRelation, { color: theme.colors.utility.secondaryText }]}>
+                    {member.name}
+                  </Text>
+                </View>
+
+                {/* Check Icon when selected */}
+                {isSelected && (
+                  <MaterialCommunityIcons name="check-circle" size={20} color={member.color} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       )}
     </View>
-  );
-
-  // --- MEMBER PICKER MODAL ---
-  const renderMemberPickerModal = () => (
-    <Modal
-      visible={showMemberPicker}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={() => setShowMemberPicker(false)}
-    >
-      <View style={[styles.modalContainer, { backgroundColor: theme.colors.utility.primaryBackground }]}>
-        <View style={[styles.modalHeader, { borderBottomColor: theme.colors.utility.secondaryText + '20' }]}>
-          <Text style={[styles.modalTitle, { color: theme.colors.utility.primaryText }]}>Select {getRoleLabel}</Text>
-          <TouchableOpacity onPress={() => setShowMemberPicker(false)}>
-            <MaterialCommunityIcons name="close" size={24} color={theme.colors.utility.secondaryText} />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView contentContainerStyle={{ padding: 20 }}>
-          {members.map((member) => (
-            <TouchableOpacity
-              key={member.id}
-              style={[
-                styles.memberPickerItem,
-                {
-                  backgroundColor: theme.colors.utility.secondaryBackground,
-                  borderColor: selectedMemberId === member.id ? member.color : 'transparent',
-                  borderWidth: selectedMemberId === member.id ? 2 : 0,
-                }
-              ]}
-              onPress={() => {
-                setSelectedMemberId(member.id);
-                setShowMemberPicker(false);
-              }}
-            >
-              {member.avatar ? (
-                <Image source={{ uri: member.avatar }} style={styles.memberPickerAvatar} />
-              ) : (
-                <View style={[styles.memberPickerAvatar, { backgroundColor: member.color }]}>
-                  <Text style={styles.memberPickerInitial}>{member.name.charAt(0)}</Text>
-                </View>
-              )}
-              <View style={{ flex: 1, marginLeft: 14 }}>
-                <Text style={[styles.memberPickerName, { color: theme.colors.utility.primaryText }]}>
-                  {member.displayRelationship}
-                </Text>
-                <Text style={[styles.memberPickerRelation, { color: theme.colors.utility.secondaryText }]}>
-                  {member.name}
-                </Text>
-              </View>
-              {selectedMemberId === member.id && (
-                <MaterialCommunityIcons name="check-circle" size={24} color={member.color} />
-              )}
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-    </Modal>
   );
 
   // --- DYNAMIC FIELDS based on Entity Type ---
@@ -604,9 +559,6 @@ export const UniversalAddAssetScreen: React.FC = () => {
         </Animated.View>
         <View style={{ height: 40 }} />
       </ScrollView>
-
-      {/* Member Picker Modal */}
-      {renderMemberPickerModal()}
     </KeyboardAvoidingView>
   );
 };
@@ -752,87 +704,54 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  memberSelectButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 56,
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-  },
-  memberSelectAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  memberSelectInitial: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  memberSelectName: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  memberSelectRole: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  memberSelectPlaceholder: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  memberSelectText: {
-    flex: 1,
-    fontSize: 15,
-  },
 
-  // Modal
-  modalContainer: {
-    flex: 1,
+  // Radio Style Member Selector
+  memberRadioContainer: {
+    gap: 10,
   },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  memberPickerItem: {
+  memberRadioItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 14,
     borderRadius: 14,
-    marginBottom: 10,
+    borderWidth: 1.5,
   },
-  memberPickerAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  radioCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 12,
   },
-  memberPickerInitial: {
+  radioCircleFilled: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  memberRadioAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  memberRadioInitial: {
     color: '#FFF',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
   },
-  memberPickerName: {
-    fontSize: 16,
+  memberRadioInfo: {
+    flex: 1,
+  },
+  memberRadioName: {
+    fontSize: 15,
     fontWeight: '600',
   },
-  memberPickerRelation: {
-    fontSize: 13,
+  memberRadioRelation: {
+    fontSize: 12,
     marginTop: 2,
   },
 });
