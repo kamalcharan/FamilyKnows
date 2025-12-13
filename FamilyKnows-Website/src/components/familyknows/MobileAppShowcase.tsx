@@ -7,27 +7,206 @@ const MobileAppShowcase: React.FC = () => {
   const { theme } = useTheme();
   const [activeScreen, setActiveScreen] = useState(1);
 
-  // Placeholder screens - replace with actual app screenshots
   const screens = [
-    {
-      id: 0,
-      title: 'Dashboard',
-      description: 'Your family wealth at a glance',
-      color: theme.colors.primary.main,
-    },
-    {
-      id: 1,
-      title: 'Asset Vault',
-      description: 'Secure storage for all documents',
-      color: theme.colors.secondary.main,
-    },
-    {
-      id: 2,
-      title: 'Family Timeline',
-      description: 'Stay updated with family activities',
-      color: theme.colors.success.main,
-    },
+    { id: 0, title: 'Dashboard', description: 'Your family wealth at a glance' },
+    { id: 1, title: 'Family Vault', description: 'All assets in one place' },
+    { id: 2, title: 'Family Hub', description: 'Stay connected with family' },
   ];
+
+  // Dashboard Screen Mockup
+  const DashboardMockup = () => (
+    <div className="mockup-screen dashboard-mockup">
+      <div className="status-bar">
+        <span>9:41</span>
+        <div className="status-icons">📶 🔋</div>
+      </div>
+      <div className="mock-header">
+        <div className="greeting">
+          <span className="greeting-label">Good Morning,</span>
+          <span className="user-name">Kamal Charan</span>
+        </div>
+        <div className="avatar-circle">KC</div>
+      </div>
+      <div className="assistant-card">
+        <div className="assistant-icon">🤖</div>
+        <div className="assistant-text">
+          <span className="assistant-title">Hi! How can I help?</span>
+          <span className="assistant-hint">Tap to ask anything...</span>
+        </div>
+      </div>
+      <div className="section-label">Quick Actions</div>
+      <div className="quick-actions">
+        <div className="action-btn primary"><span>➕</span> Add</div>
+        <div className="action-btn"><span>📤</span> Upload</div>
+        <div className="action-btn"><span>📷</span> Scan</div>
+      </div>
+      <div className="section-label">Overview</div>
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="card-top">
+            <div className="card-icon purple">📋</div>
+            <div className="badge warning">2 Due</div>
+          </div>
+          <span className="card-label">Tasks</span>
+        </div>
+        <div className="overview-card">
+          <div className="card-top">
+            <div className="card-icon green">📦</div>
+            <div className="badge error">1 Alert</div>
+          </div>
+          <span className="card-label">Assets</span>
+        </div>
+        <div className="overview-card">
+          <div className="card-top">
+            <div className="card-icon red">❤️</div>
+          </div>
+          <span className="card-label">Health</span>
+        </div>
+        <div className="overview-card">
+          <div className="card-top">
+            <div className="card-icon orange">💰</div>
+            <div className="badge success">+12%</div>
+          </div>
+          <span className="card-label">Finance</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Asset Vault Screen Mockup
+  const AssetVaultMockup = () => (
+    <div className="mockup-screen vault-mockup">
+      <div className="status-bar light">
+        <span>9:41</span>
+        <div className="status-icons">📶 🔋</div>
+      </div>
+      <div className="vault-header">
+        <button className="back-btn">←</button>
+        <div className="vault-title">
+          <span className="title">Family Vault</span>
+          <span className="subtitle">Everything in one place</span>
+        </div>
+        <button className="add-btn">➕</button>
+      </div>
+      <div className="alert-row">
+        <div className="alert-chip error">⚠️ 1 Overdue</div>
+        <div className="alert-chip warning">⏰ 3 Due Soon</div>
+      </div>
+      <div className="person-filter">
+        <div className="person-chip active">👨‍👩‍👧 Everyone</div>
+        <div className="person-chip">👨 Dad</div>
+        <div className="person-chip">👩 Mom</div>
+      </div>
+      <div className="category-pills">
+        <div className="cat-pill active">All</div>
+        <div className="cat-pill">🛡️ Insurance</div>
+        <div className="cat-pill">🚗 Vehicles</div>
+      </div>
+      <div className="asset-list">
+        <div className="asset-card">
+          <div className="asset-img purple">🛡️</div>
+          <div className="asset-info">
+            <span className="asset-title">HDFC Health Optima</span>
+            <span className="asset-meta">Cover: ₹50L • Family</span>
+            <div className="asset-status good">✓ Premium: Dec 2025</div>
+          </div>
+          <span className="chevron">›</span>
+        </div>
+        <div className="asset-card">
+          <div className="asset-img orange">⚡</div>
+          <div className="asset-info">
+            <span className="asset-title">Luminous Inverter</span>
+            <span className="asset-meta">AMC Active • Utility</span>
+            <div className="asset-status critical">⚠️ Water Overdue</div>
+          </div>
+          <span className="chevron">›</span>
+        </div>
+        <div className="asset-card">
+          <div className="asset-img green">🚗</div>
+          <div className="asset-info">
+            <span className="asset-title">Tata Safari</span>
+            <span className="asset-meta">KA-01-MJ-1234</span>
+            <div className="asset-status warning">⏰ Service Due</div>
+          </div>
+          <span className="chevron">›</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Family Hub Screen Mockup
+  const FamilyHubMockup = () => (
+    <div className="mockup-screen family-mockup">
+      <div className="status-bar">
+        <span>9:41</span>
+        <div className="status-icons">📶 🔋</div>
+      </div>
+      <div className="mock-header simple">
+        <span className="page-title">Family Hub</span>
+      </div>
+      <div className="section-label">Members (4)</div>
+      <div className="family-members">
+        <div className="member-card">
+          <div className="member-avatar blue">KC</div>
+          <div className="member-info">
+            <span className="member-name">Kamal Charan</span>
+            <span className="member-role">You • Admin</span>
+          </div>
+          <div className="member-badge owner">Owner</div>
+        </div>
+        <div className="member-card">
+          <div className="member-avatar pink">SP</div>
+          <div className="member-info">
+            <span className="member-name">Sravanthi</span>
+            <span className="member-role">Spouse</span>
+          </div>
+          <div className="member-badge">Editor</div>
+        </div>
+        <div className="member-card">
+          <div className="member-avatar green">RK</div>
+          <div className="member-info">
+            <span className="member-name">Ramakrishna</span>
+            <span className="member-role">Father</span>
+          </div>
+          <div className="member-badge">Viewer</div>
+        </div>
+      </div>
+      <div className="section-label">Recent Activity</div>
+      <div className="activity-feed">
+        <div className="activity-item">
+          <div className="activity-dot green"></div>
+          <div className="activity-content">
+            <span className="activity-text">Car insurance renewed</span>
+            <span className="activity-time">2 hours ago</span>
+          </div>
+        </div>
+        <div className="activity-item">
+          <div className="activity-dot purple"></div>
+          <div className="activity-content">
+            <span className="activity-text">Passport uploaded</span>
+            <span className="activity-time">Yesterday</span>
+          </div>
+        </div>
+        <div className="activity-item">
+          <div className="activity-dot blue"></div>
+          <div className="activity-content">
+            <span className="activity-text">Mom joined the vault</span>
+            <span className="activity-time">2 days ago</span>
+          </div>
+        </div>
+      </div>
+      <div className="add-member-btn">➕ Invite Family Member</div>
+    </div>
+  );
+
+  const renderMockup = (screenId: number) => {
+    switch (screenId) {
+      case 0: return <DashboardMockup />;
+      case 1: return <AssetVaultMockup />;
+      case 2: return <FamilyHubMockup />;
+      default: return <DashboardMockup />;
+    }
+  };
 
   return (
     <section
@@ -37,7 +216,6 @@ const MobileAppShowcase: React.FC = () => {
       }}
     >
       <div className="showcase-container">
-        {/* Header */}
         <div className="showcase-header">
           <h2 className="showcase-title" style={{ color: theme.colors.text.primary }}>
             Beautiful, Intuitive, Secure
@@ -47,7 +225,6 @@ const MobileAppShowcase: React.FC = () => {
           </p>
         </div>
 
-        {/* 3D Phone Carousel */}
         <div className="phone-carousel-3d">
           {screens.map((screen, index) => {
             const position = index - activeScreen;
@@ -69,44 +246,18 @@ const MobileAppShowcase: React.FC = () => {
                 }}
                 onClick={() => setActiveScreen(index)}
               >
-                {/* Phone Frame */}
-                <div
-                  className="phone-frame"
-                  style={{
-                    background: `linear-gradient(145deg, ${theme.colors.background.dark}, ${theme.colors.primary.dark})`,
-                  }}
-                >
-                  {/* Notch */}
-                  <div className="phone-notch" style={{ backgroundColor: theme.colors.background.dark }} />
-
-                  {/* Screen Content */}
-                  <div
-                    className="phone-screen"
-                    style={{ backgroundColor: screen.color }}
-                  >
-                    {/* Placeholder Screen */}
-                    <div className="screen-content">
-                      <div className="screen-placeholder">
-                        <div className="screen-icon">📱</div>
-                        <div className="screen-text" style={{ color: theme.colors.common.white }}>
-                          {screen.title}
-                        </div>
-                        <div className="screen-subtext" style={{ color: theme.colors.common.white }}>
-                          {screen.description}
-                        </div>
-                      </div>
-                    </div>
+                <div className="phone-frame">
+                  <div className="phone-notch" />
+                  <div className="phone-screen">
+                    {renderMockup(screen.id)}
                   </div>
-
-                  {/* Home Indicator */}
-                  <div className="home-indicator" style={{ backgroundColor: theme.colors.common.white }} />
+                  <div className="home-indicator" />
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Screen Navigation */}
         <div className="screen-nav">
           {screens.map((screen, index) => (
             <button
@@ -123,7 +274,6 @@ const MobileAppShowcase: React.FC = () => {
           ))}
         </div>
 
-        {/* Download Buttons */}
         <div className="download-section">
           <h3 className="download-title" style={{ color: theme.colors.text.primary }}>
             Coming Soon to Your Device
