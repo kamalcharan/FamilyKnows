@@ -43,7 +43,7 @@ const MobileAppShowcase: React.FC = () => {
             Beautiful, Intuitive, Secure
           </h2>
           <p className="showcase-subtitle" style={{ color: theme.colors.text.secondary }}>
-            Designed for families, built with love - available on iOS & Android
+            Designed for families, built with love - available on Android
           </p>
         </div>
 
@@ -129,19 +129,6 @@ const MobileAppShowcase: React.FC = () => {
             Coming Soon to Your Device
           </h3>
           <div className="download-buttons">
-            <button
-              className="store-button"
-              style={{
-                backgroundColor: theme.colors.background.dark,
-                color: theme.colors.common.white,
-              }}
-            >
-              <span className="store-icon">🍎</span>
-              <div className="store-text">
-                <div className="store-label">Download on the</div>
-                <div className="store-name">App Store</div>
-              </div>
-            </button>
             <button
               className="store-button"
               style={{

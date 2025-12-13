@@ -29,7 +29,7 @@ const TrustSignals: React.FC = () => {
     {
       icon: '📱',
       title: 'Mobile-First',
-      subtitle: 'iOS & Android ready',
+      subtitle: 'Android ready',
       verified: true,
     },
   ];
