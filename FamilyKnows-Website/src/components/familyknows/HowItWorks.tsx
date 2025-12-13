@@ -10,7 +10,7 @@ const HowItWorks: React.FC = () => {
     {
       number: 1,
       title: 'Download & Setup',
-      description: 'Install FamilyKnows on iOS or Android. Set up your secure vault with PIN protection and end-to-end encryption.',
+      description: 'Install FamilyKnows on Android. Set up your secure vault with PIN protection and end-to-end encryption.',
       icon: '📱',
       features: ['5-minute setup', 'Biometric security', 'Offline access'],
     },

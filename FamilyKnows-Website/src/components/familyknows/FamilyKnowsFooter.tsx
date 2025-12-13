@@ -1,10 +1,52 @@
 // src/components/familyknows/FamilyKnowsFooter.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '../../hooks/useTheme';
+import { submitWaitlist } from '../../lib/supabase';
 import './FamilyKnowsFooter.css';
 
 const FamilyKnowsFooter: React.FC = () => {
   const { theme } = useTheme();
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
+
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email) {
+      setMessage('Please enter your email');
+      setStatus('error');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setMessage('Please enter a valid email');
+      setStatus('error');
+      return;
+    }
+
+    setStatus('submitting');
+    setMessage('');
+
+    const result = await submitWaitlist({
+      email,
+      plan_type: 'waitlist',
+      source: 'footer',
+    });
+
+    if (result.success) {
+      setStatus('success');
+      setMessage(result.isExisting ? "You're already on our list!" : 'Welcome aboard!');
+      setEmail('');
+    } else {
+      setStatus('error');
+      setMessage(result.error || 'Something went wrong');
+    }
+  };
 
   return (
     <footer
@@ -70,24 +112,42 @@ const FamilyKnowsFooter: React.FC = () => {
           <div className="footer-section cta-section">
             <h4 className="footer-heading">Stay Updated</h4>
             <p className="footer-text">Get early access and updates</p>
-            <div className="footer-cta">
+            <form onSubmit={handleSubmit} className="footer-cta">
               <input
                 type="email"
                 placeholder="Enter your email"
                 className="footer-input"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (status === 'error') setStatus('idle');
+                }}
+                disabled={status === 'submitting'}
                 style={{
-                  borderColor: theme.colors.primary.main,
+                  borderColor: status === 'error' ? theme.colors.error.main : theme.colors.primary.main,
                 }}
               />
               <button
+                type="submit"
                 className="footer-button"
+                disabled={status === 'submitting'}
                 style={{
-                  backgroundColor: theme.colors.primary.main,
+                  backgroundColor: status === 'submitting' ? theme.colors.text.disabled : theme.colors.primary.main,
                 }}
               >
-                Join Waitlist
+                {status === 'submitting' ? '...' : 'Join Waitlist'}
               </button>
-            </div>
+            </form>
+            {message && (
+              <p
+                className="footer-message"
+                style={{
+                  color: status === 'success' ? theme.colors.success.main : theme.colors.error.main,
+                }}
+              >
+                {status === 'success' ? '✓' : '!'} {message}
+              </p>
+            )}
           </div>
         </div>
 
