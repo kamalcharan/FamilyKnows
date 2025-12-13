@@ -1,11 +1,13 @@
 // src/components/familyknows/FAQ.tsx
 import React, { useState } from 'react';
 import { useTheme } from '../../hooks/useTheme';
+import ContactModal from './ContactModal';
 import './FAQ.css';
 
 const FAQ: React.FC = () => {
   const { theme } = useTheme();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [isContactOpen, setIsContactOpen] = useState(false);
 
   const faqs = [
     {
@@ -47,68 +49,77 @@ const FAQ: React.FC = () => {
   };
 
   return (
-    <section className="faq" style={{ backgroundColor: theme.colors.background.default }}>
-      <div className="faq-container">
-        {/* Header */}
-        <div className="faq-header">
-          <h2 className="faq-title" style={{ color: theme.colors.text.primary }}>
-            Frequently Asked Questions
-          </h2>
-          <p className="faq-subtitle" style={{ color: theme.colors.text.secondary }}>
-            Everything you need to know about FamilyKnows
-          </p>
-        </div>
+    <>
+      <section className="faq" style={{ backgroundColor: theme.colors.background.default }}>
+        <div className="faq-container">
+          {/* Header */}
+          <div className="faq-header">
+            <h2 className="faq-title" style={{ color: theme.colors.text.primary }}>
+              Frequently Asked Questions
+            </h2>
+            <p className="faq-subtitle" style={{ color: theme.colors.text.secondary }}>
+              Everything you need to know about FamilyKnows
+            </p>
+          </div>
 
-        {/* FAQ List */}
-        <div className="faq-list">
-          {faqs.map((faq, index) => (
-            <div
-              key={index}
-              className={`faq-item ${openIndex === index ? 'open' : ''}`}
+          {/* FAQ List */}
+          <div className="faq-list">
+            {faqs.map((faq, index) => (
+              <div
+                key={index}
+                className={`faq-item ${openIndex === index ? 'open' : ''}`}
+                style={{
+                  backgroundColor: theme.colors.background.paper,
+                  borderColor: openIndex === index ? theme.colors.primary.main : 'transparent',
+                }}
+              >
+                <button
+                  className="faq-question"
+                  onClick={() => toggleFAQ(index)}
+                  style={{ color: theme.colors.text.primary }}
+                >
+                  <span className="question-text">{faq.question}</span>
+                  <span
+                    className="question-icon"
+                    style={{
+                      color: openIndex === index ? theme.colors.primary.main : theme.colors.text.disabled,
+                    }}
+                  >
+                    {openIndex === index ? '−' : '+'}
+                  </span>
+                </button>
+
+                <div className={`faq-answer ${openIndex === index ? 'open' : ''}`}>
+                  <p style={{ color: theme.colors.text.secondary }}>{faq.answer}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="faq-cta">
+            <p style={{ color: theme.colors.text.secondary }}>
+              Still have questions?
+            </p>
+            <button
+              className="faq-cta-button"
+              onClick={() => setIsContactOpen(true)}
               style={{
-                backgroundColor: theme.colors.background.paper,
-                borderColor: openIndex === index ? theme.colors.primary.main : 'transparent',
+                backgroundColor: theme.colors.primary.main,
               }}
             >
-              <button
-                className="faq-question"
-                onClick={() => toggleFAQ(index)}
-                style={{ color: theme.colors.text.primary }}
-              >
-                <span className="question-text">{faq.question}</span>
-                <span
-                  className="question-icon"
-                  style={{
-                    color: openIndex === index ? theme.colors.primary.main : theme.colors.text.disabled,
-                  }}
-                >
-                  {openIndex === index ? '−' : '+'}
-                </span>
-              </button>
-
-              <div className={`faq-answer ${openIndex === index ? 'open' : ''}`}>
-                <p style={{ color: theme.colors.text.secondary }}>{faq.answer}</p>
-              </div>
-            </div>
-          ))}
+              Contact Us
+            </button>
+          </div>
         </div>
+      </section>
 
-        {/* CTA */}
-        <div className="faq-cta">
-          <p style={{ color: theme.colors.text.secondary }}>
-            Still have questions?
-          </p>
-          <button
-            className="faq-cta-button"
-            style={{
-              backgroundColor: theme.colors.primary.main,
-            }}
-          >
-            Contact Us
-          </button>
-        </div>
-      </div>
-    </section>
+      {/* Contact Modal */}
+      <ContactModal
+        isOpen={isContactOpen}
+        onClose={() => setIsContactOpen(false)}
+      />
+    </>
   );
 };
 
