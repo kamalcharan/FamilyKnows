@@ -623,7 +623,7 @@ export const PhoneAuthScreen: React.FC<Props> = ({ navigation, route }) => {
               ? 'Manage Phone Numbers'
               : editingNumber
               ? 'Update Phone Number'
-              : 'Verify Your Phone Number'
+              : 'Verify Your Mobile'
             }
           </Text>
           <Text style={[styles.subtitle, { color: theme.colors.utility.secondaryText }]}>
@@ -631,7 +631,7 @@ export const PhoneAuthScreen: React.FC<Props> = ({ navigation, route }) => {
               ? `We've sent a 4-digit code to\n${selectedCountry.dialCode} ${phoneNumber}`
               : mode === 'list'
               ? 'Add or manage your phone numbers'
-              : "We'll send you a verification code to confirm your number"
+              : "Link your mobile number for account recovery and notifications"
             }
           </Text>
         </Animated.View>

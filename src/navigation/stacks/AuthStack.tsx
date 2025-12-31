@@ -7,6 +7,8 @@ import { AuthStackParamList } from '../types';
 import { SplashScreen } from '../../features/auth/screens/SplashScreen';
 import { IntroScreens } from '../../features/auth/screens/IntroScreens';
 import { LoginScreen } from '../../features/auth/screens/LoginScreen';
+import { SignupScreen } from '../../features/auth/screens/SignupScreen';
+import { ForgotPasswordScreen } from '../../features/auth/screens/ForgotPasswordScreen';
 
 // Onboarding screens
 import { StoryOnboardingScreen } from '../../features/onboarding/screens/StoryOnboardingScreen';
@@ -54,61 +56,75 @@ export const AuthStack: React.FC = () => {
           animation: 'slide_from_right',
         }}
       />
-      
+      <Stack.Screen
+        name="Signup"
+        component={SignupScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="ForgotPassword"
+        component={ForgotPasswordScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+
       {/* Onboarding Flow */}
-      <Stack.Screen 
-        name="PhoneAuth" 
+      <Stack.Screen
+        name="PhoneAuth"
         component={PhoneAuthScreen}
         options={{
           animation: 'slide_from_right',
         }}
       />
-      <Stack.Screen 
-        name="UserProfile" 
+      <Stack.Screen
+        name="UserProfile"
         component={UserProfileScreen}
         options={{
           animation: 'slide_from_right',
         }}
       />
-      <Stack.Screen 
-        name="ThemeSelection" 
+      <Stack.Screen
+        name="ThemeSelection"
         component={ThemeSelectionScreen}
         options={{
           animation: 'slide_from_right',
         }}
       />
-      <Stack.Screen 
-        name="LanguageSelection" 
+      <Stack.Screen
+        name="LanguageSelection"
         component={LanguageSelectionScreen}
         options={{
           animation: 'slide_from_right',
         }}
       />
-      <Stack.Screen 
-        name="GoogleDriveConnect" 
+      <Stack.Screen
+        name="GoogleDriveConnect"
         component={GoogleDriveConnectScreen}
         options={{
           animation: 'slide_from_right',
         }}
       />
-      <Stack.Screen 
-        name="FamilySetup" 
+      <Stack.Screen
+        name="FamilySetup"
         component={FamilySetupScreen}
         options={{
           animation: 'slide_from_right',
         }}
       />
-      <Stack.Screen 
-        name="Pricing" 
+      <Stack.Screen
+        name="Pricing"
         component={PricingScreen}
         options={{
           animation: 'slide_from_right',
         }}
       />
-      
+
       {/* Main App with Navigation */}
-      <Stack.Screen 
-        name="Main" 
+      <Stack.Screen
+        name="Main"
         component={MainNavigator}
         options={{
           animation: 'fade',

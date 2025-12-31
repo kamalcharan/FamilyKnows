@@ -8,18 +8,18 @@ import {
   Text,
   ScrollView,
   TouchableWithoutFeedback,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
+import { useAuth } from '../../context/AuthContext';
 
 interface MenuDrawerProps {
   visible: boolean;
   onClose: () => void;
-  userName?: string;
-  userEmail?: string;
 }
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
@@ -27,11 +27,14 @@ type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 export const MenuDrawer: React.FC<MenuDrawerProps> = ({
   visible,
   onClose,
-  userName = 'User',
-  userEmail = 'user@example.com',
 }) => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const { user, logout } = useAuth();
+
+  // Get user info from AuthContext
+  const userName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User' : 'User';
+  const userEmail = user?.email || 'user@example.com';
 
   const menuItems = [
     {
@@ -101,30 +104,63 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
     },
     {
       id: 'logout',
-      title: 'Logout',
+      title: 'Sign Out',
       icon: 'logout',
       action: 'logout',
     },
   ];
 
+  const handleLogout = async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            onClose();
+            try {
+              await logout();
+              // Navigate to login after logout
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            } catch (error) {
+              console.error('Logout error:', error);
+              // Still navigate to login even on error
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleMenuItemPress = (item: any) => {
-    onClose();
-    
     if (item.screen) {
+      onClose();
       navigation.navigate(item.screen as any, item.params);
     } else if (item.action) {
       switch (item.action) {
         case 'logout':
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
+          handleLogout();
           break;
         case 'help':
-          // Handle help
+          onClose();
+          // Handle help - could navigate to a help screen or open URL
           break;
         case 'about':
-          // Handle about
+          onClose();
+          // Handle about - could navigate to an about screen
           break;
       }
     }
@@ -133,9 +169,9 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
   const renderMenuItem = (item: any) => {
     if (item.isDivider) {
       return (
-        <View 
+        <View
           key={item.id}
-          style={[styles.menuDivider, { backgroundColor: theme.colors.utility.secondaryText + '20' }]} 
+          style={[styles.menuDivider, { backgroundColor: theme.colors.utility.secondaryText + '20' }]}
         />
       );
     }

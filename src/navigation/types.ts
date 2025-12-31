@@ -13,6 +13,8 @@ export type AuthStackParamList = {
   Intro: undefined;
   StoryOnboarding: undefined;
   Login: { userName?: string; familyName?: string };
+  Signup: undefined;
+  ForgotPassword: undefined;
 
   // Onboarding screens (in order) - all carry prefill data
   PhoneAuth: { isFromSettings?: boolean } & OnboardingPrefillData;
@@ -22,6 +24,15 @@ export type AuthStackParamList = {
   GoogleDriveConnect: { isFromSettings: boolean } & OnboardingPrefillData;
   FamilySetup: { isFromSettings: boolean } & OnboardingPrefillData;
   Pricing: undefined;
+
+  // Settings screens (accessible from menu)
+  SettingsProfile: { isFromSettings: boolean };
+  SettingsPhone: { isFromSettings: boolean };
+  SettingsTheme: { isFromSettings: boolean };
+  SettingsLanguage: { isFromSettings: boolean };
+  SettingsGoogleDrive: { isFromSettings: boolean };
+  SettingsFamily: { isFromSettings: boolean };
+  SettingsPricing: undefined;
 
   // Main app
   Main: undefined;

@@ -1,3 +1,6 @@
 // src/context/index.ts
-export { FamilyProvider, useFamily } from './FamilyContext';
-export type { FamilyMember, RelationshipType, FamilyContextType } from './FamilyContext';
+// Export all contexts
+
+export { FamilyProvider, useFamilyContext } from './FamilyContext';
+export { AuthProvider, useAuth } from './AuthContext';
+export type { User, Tenant, RegisterData } from './AuthContext';
