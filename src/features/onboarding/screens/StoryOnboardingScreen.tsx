@@ -28,8 +28,9 @@ export const StoryOnboardingScreen: React.FC = () => {
 
   // Animation Values
   const scrollY = useRef(new Animated.Value(0)).current;
-  const [userName, setUserName] = useState('');
-  const [familyName, setFamilyName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [spaceName, setSpaceName] = useState('');
 
   // Floating animation for seed
   const floatAnim = useRef(new Animated.Value(0)).current;
@@ -119,11 +120,11 @@ export const StoryOnboardingScreen: React.FC = () => {
   });
 
   const handleFinish = () => {
-    // Pass data to the next screen with correct parameter names for the data bridge
-    navigation.replace('PhoneAuth', {
-      isFromSettings: false,
-      prefillName: userName,
-      prefillFamily: familyName,
+    // Navigate to Signup with captured data
+    navigation.replace('Signup', {
+      prefillFirstName: firstName,
+      prefillLastName: lastName,
+      prefillSpaceName: spaceName,
     });
   };
 
@@ -291,18 +292,26 @@ export const StoryOnboardingScreen: React.FC = () => {
               <Text style={styles.cardTitle}>Who are you?</Text>
               <Text style={styles.cardSubtitle}>The seed that starts the tree.</Text>
               <TextInput
-                placeholder="Enter your name"
+                placeholder="First name"
                 placeholderTextColor="rgba(255,255,255,0.4)"
-                value={userName}
-                onChangeText={setUserName}
+                value={firstName}
+                onChangeText={setFirstName}
                 style={styles.textInput}
+                autoCapitalize="words"
+              />
+              <TextInput
+                placeholder="Last name"
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                value={lastName}
+                onChangeText={setLastName}
+                style={[styles.textInput, { marginTop: 16 }]}
                 autoCapitalize="words"
               />
             </View>
           </KeyboardAvoidingView>
         </View>
 
-        {/* PAGE 3: FAMILY NAME */}
+        {/* PAGE 3: FAMILY SPACE NAME */}
         <View style={styles.page}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -312,13 +321,13 @@ export const StoryOnboardingScreen: React.FC = () => {
               <View style={styles.cardIcon}>
                 <MaterialCommunityIcons name="family-tree" size={40} color="#8B5CF6" />
               </View>
-              <Text style={styles.cardTitle}>Name your tree.</Text>
+              <Text style={styles.cardTitle}>Name your space.</Text>
               <Text style={styles.cardSubtitle}>Your family's digital identity.</Text>
               <TextInput
                 placeholder="e.g. The Charan Family"
                 placeholderTextColor="rgba(255,255,255,0.4)"
-                value={familyName}
-                onChangeText={setFamilyName}
+                value={spaceName}
+                onChangeText={setSpaceName}
                 style={styles.textInput}
                 autoCapitalize="words"
               />
@@ -334,24 +343,24 @@ export const StoryOnboardingScreen: React.FC = () => {
             </View>
             <Text style={styles.finalTitle}>Your Vault Awaits</Text>
             <Text style={styles.finalSub}>
-              {userName ? `Welcome, ${userName}.` : 'Welcome.'}
+              {firstName ? `Welcome, ${firstName}.` : 'Welcome.'}
             </Text>
-            {familyName && (
-              <Text style={styles.familyNameDisplay}>{familyName}</Text>
+            {spaceName && (
+              <Text style={styles.familyNameDisplay}>{spaceName}</Text>
             )}
             <TouchableOpacity
               style={[
                 styles.finishButton,
-                (!userName || !familyName) && styles.finishButtonDisabled
+                (!firstName || !lastName || !spaceName) && styles.finishButtonDisabled
               ]}
               onPress={handleFinish}
-              disabled={!userName || !familyName}
+              disabled={!firstName || !lastName || !spaceName}
               activeOpacity={0.8}
             >
-              <Text style={styles.finishButtonText}>Enter FamilyKnows</Text>
+              <Text style={styles.finishButtonText}>Continue to Signup</Text>
               <MaterialCommunityIcons name="arrow-right" size={20} color="#FFF" />
             </TouchableOpacity>
-            {(!userName || !familyName) && (
+            {(!firstName || !lastName || !spaceName) && (
               <Text style={styles.hintText}>
                 Scroll up to fill in your details
               </Text>

@@ -3,11 +3,11 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MainDashboard } from '../features/dashboard/screens/MainDashboard';
 
-// Import all screens that can be accessed from settings
-import { UserProfileScreen } from '../features/onboarding/screens/UserProfileScreen';
-import { PhoneAuthScreen } from '../features/onboarding/screens/PhoneAuthScreen';
-import { ThemeSelectionScreen } from '../features/onboarding/screens/ThemeSelectionScreen';
-import { LanguageSelectionScreen } from '../features/onboarding/screens/LanguageSelectionScreen';
+// Import all screens that can be accessed from settings (Storyboard Style)
+import { ProfileSetupScreen } from '../features/onboarding/screens/ProfileSetupScreen';
+import { MobileNumberScreen } from '../features/onboarding/screens/MobileNumberScreen';
+import { ThemeSetupScreen } from '../features/onboarding/screens/ThemeSetupScreen';
+import { LanguageSetupScreen } from '../features/onboarding/screens/LanguageSetupScreen';
 import { GoogleDriveConnectScreen } from '../features/onboarding/screens/GoogleDriveConnectScreen';
 import { FamilySetupScreen } from '../features/onboarding/screens/FamilySetupScreen';
 import { PricingScreen } from '../features/onboarding/screens/PricingScreen';
@@ -99,25 +99,25 @@ export const MainNavigator: React.FC = () => {
         options={{ animation: 'slide_from_right' }}
       />
 
-      {/* Settings Screens */}
-      <Stack.Screen 
-        name="SettingsProfile" 
-        component={UserProfileScreen}
+      {/* Settings Screens - Storyboard Style */}
+      <Stack.Screen
+        name="SettingsProfile"
+        component={ProfileSetupScreen}
         options={{ animation: 'slide_from_right' }}
       />
-      <Stack.Screen 
-        name="SettingsPhone" 
-        component={PhoneAuthScreen}
+      <Stack.Screen
+        name="SettingsPhone"
+        component={MobileNumberScreen}
         options={{ animation: 'slide_from_right' }}
       />
-      <Stack.Screen 
-        name="SettingsTheme" 
-        component={ThemeSelectionScreen}
+      <Stack.Screen
+        name="SettingsTheme"
+        component={ThemeSetupScreen}
         options={{ animation: 'slide_from_right' }}
       />
-      <Stack.Screen 
-        name="SettingsLanguage" 
-        component={LanguageSelectionScreen}
+      <Stack.Screen
+        name="SettingsLanguage"
+        component={LanguageSetupScreen}
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen 

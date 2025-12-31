@@ -79,8 +79,8 @@ export const SignupScreen: React.FC = () => {
   // Navigate when authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      // Go to first onboarding step (mobile capture)
-      navigation.replace('MobileCapture' as any, { isFromSettings: false });
+      // Go to first onboarding step (mobile capture - storyboard style)
+      navigation.replace('PhoneAuth' as any, { isFromSettings: false });
     }
   }, [isAuthenticated, navigation]);
 
@@ -116,10 +116,15 @@ export const SignupScreen: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // FamilyKnows: Only send email + password
+      // FamilyKnows: Send email + password + default workspace name
+      // This creates a family space during registration
+      const emailUsername = email.split('@')[0];
+      const defaultWorkspaceName = `${emailUsername}'s Family`;
+
       await register({
         email: email.trim().toLowerCase(),
         password,
+        workspaceName: defaultWorkspaceName,
       });
       // Navigation will happen via useEffect when isAuthenticated changes
     } catch (error: any) {

@@ -12,10 +12,10 @@ import { ForgotPasswordScreen } from '../../features/auth/screens/ForgotPassword
 
 // Onboarding screens
 import { StoryOnboardingScreen } from '../../features/onboarding/screens/StoryOnboardingScreen';
-import { PhoneAuthScreen } from '../../features/onboarding/screens/PhoneAuthScreen';
-import { UserProfileScreen } from '../../features/onboarding/screens/UserProfileScreen';
-import { ThemeSelectionScreen } from '../../features/onboarding/screens/ThemeSelectionScreen';
-import { LanguageSelectionScreen } from '../../features/onboarding/screens/LanguageSelectionScreen';
+import { MobileNumberScreen } from '../../features/onboarding/screens/MobileNumberScreen';
+import { ProfileSetupScreen } from '../../features/onboarding/screens/ProfileSetupScreen';
+import { ThemeSetupScreen } from '../../features/onboarding/screens/ThemeSetupScreen';
+import { LanguageSetupScreen } from '../../features/onboarding/screens/LanguageSetupScreen';
 import { GoogleDriveConnectScreen } from '../../features/onboarding/screens/GoogleDriveConnectScreen';
 import { FamilySetupScreen } from '../../features/onboarding/screens/FamilySetupScreen';
 import { PricingScreen } from '../../features/onboarding/screens/PricingScreen';
@@ -71,31 +71,31 @@ export const AuthStack: React.FC = () => {
         }}
       />
 
-      {/* Onboarding Flow */}
+      {/* Onboarding Flow - Storyboard Style */}
       <Stack.Screen
         name="PhoneAuth"
-        component={PhoneAuthScreen}
+        component={MobileNumberScreen}
         options={{
           animation: 'slide_from_right',
         }}
       />
       <Stack.Screen
         name="UserProfile"
-        component={UserProfileScreen}
+        component={ProfileSetupScreen}
         options={{
           animation: 'slide_from_right',
         }}
       />
       <Stack.Screen
         name="ThemeSelection"
-        component={ThemeSelectionScreen}
+        component={ThemeSetupScreen}
         options={{
           animation: 'slide_from_right',
         }}
       />
       <Stack.Screen
         name="LanguageSelection"
-        component={LanguageSelectionScreen}
+        component={LanguageSetupScreen}
         options={{
           animation: 'slide_from_right',
         }}

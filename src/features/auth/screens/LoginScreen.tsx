@@ -25,6 +25,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../context/AuthContext';
+import { api } from '../../../services/api';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -89,11 +90,79 @@ export const LoginScreen: React.FC = () => {
     ]).start();
   }, []);
 
-  // Navigate when authenticated
+  // Navigate when authenticated - check onboarding status
   useEffect(() => {
-    if (isAuthenticated) {
-      navigation.replace('PhoneAuth' as any, { isFromSettings: false });
-    }
+    const checkOnboardingAndNavigate = async () => {
+      if (isAuthenticated) {
+        try {
+          // Check onboarding status from API (uses api service with auth token)
+          const response = await api.get<{
+            needs_onboarding: boolean;
+            data: {
+              is_complete: boolean;
+              steps: Record<string, { id: string; status: string; is_required: boolean; sequence: number }>;
+            };
+          }>('/api/FKonboarding/status');
+
+          const result = response.data;
+          console.log('Onboarding status:', JSON.stringify(result, null, 2));
+
+          // Check if onboarding is complete
+          if (!result.needs_onboarding || result.data?.is_complete) {
+            // Onboarding complete - go to main app
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Main' }],
+            });
+          } else {
+            // Find first incomplete required step
+            // Steps is an OBJECT: { mobile: {...}, 'personal-profile': {...}, theme: {...}, language: {...} }
+            const stepOrder = ['mobile', 'personal-profile', 'theme', 'language'];
+            const steps = result.data?.steps || {};
+
+            let firstIncompleteStep: string | null = null;
+            for (const stepId of stepOrder) {
+              const step = steps[stepId];
+              if (step && step.status === 'pending') {
+                firstIncompleteStep = stepId;
+                break;
+              }
+            }
+
+            console.log('First incomplete step:', firstIncompleteStep);
+
+            if (firstIncompleteStep) {
+              // Navigate to the appropriate onboarding screen
+              switch (firstIncompleteStep) {
+                case 'mobile':
+                  navigation.replace('PhoneAuth' as any, { isFromSettings: false });
+                  break;
+                case 'personal-profile':
+                  navigation.replace('UserProfile' as any, { isFromSettings: false });
+                  break;
+                case 'theme':
+                  navigation.replace('ThemeSelection' as any, { isFromSettings: false });
+                  break;
+                case 'language':
+                  navigation.replace('LanguageSelection' as any, { isFromSettings: false });
+                  break;
+                default:
+                  navigation.replace('PhoneAuth' as any, { isFromSettings: false });
+              }
+            } else {
+              // No pending steps found but needs_onboarding is true - start from beginning
+              navigation.replace('PhoneAuth' as any, { isFromSettings: false });
+            }
+          }
+        } catch (error) {
+          console.log('Error checking onboarding status, defaulting to onboarding:', error);
+          // Default to onboarding flow on error
+          navigation.replace('PhoneAuth' as any, { isFromSettings: false });
+        }
+      }
+    };
+
+    checkOnboardingAndNavigate();
   }, [isAuthenticated, navigation]);
 
   const validateForm = (): boolean => {

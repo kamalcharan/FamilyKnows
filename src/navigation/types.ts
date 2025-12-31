@@ -2,8 +2,11 @@
 
 // Prefill data passed from StoryOnboarding through the entire flow
 export type OnboardingPrefillData = {
-  prefillName?: string;    // User's name from Story
-  prefillFamily?: string;  // Family name from Story
+  prefillName?: string;    // User's name from Story (legacy)
+  prefillFamily?: string;  // Family name from Story (legacy)
+  prefillFirstName?: string;  // First name from Story
+  prefillLastName?: string;   // Last name from Story
+  prefillSpaceName?: string;  // Family space name from Story
 };
 
 // Auth Stack - includes both auth and onboarding screens
@@ -13,7 +16,7 @@ export type AuthStackParamList = {
   Intro: undefined;
   StoryOnboarding: undefined;
   Login: { userName?: string; familyName?: string };
-  Signup: undefined;
+  Signup: OnboardingPrefillData | undefined;
   ForgotPassword: undefined;
 
   // Onboarding screens (in order) - all carry prefill data
