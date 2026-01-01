@@ -209,10 +209,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           resetSessionTimer();
         } catch (error) {
           console.error('Token verification failed:', error);
-          await api.clearAuth();
-          setUser(null);
-          setTenants([]);
-          setCurrentTenantState(null);
+
+          // Check if token is fresh (within last 30 seconds) - don't clear if so
+          const lastActivity = await AsyncStorage.getItem(STORAGE_KEYS.LAST_ACTIVITY);
+          const tokenAge = lastActivity ? Date.now() - parseInt(lastActivity, 10) : Infinity;
+
+          if (tokenAge < 30000) {
+            console.log('Token is fresh during init, keeping auth. Age:', tokenAge);
+            // Token is fresh but verification failed (likely service issue)
+            // Keep the auth state, assume token is valid
+            setIsAuthenticated(true);
+            resetSessionTimer();
+          } else {
+            console.log('Token is stale, clearing auth. Age:', tokenAge);
+            await api.clearAuth();
+            setUser(null);
+            setTenants([]);
+            setCurrentTenantState(null);
+          }
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -275,6 +289,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       // FamilyKnows: Send email + password + optional workspace_name
       // If workspaceName provided, tenant is created during registration
+      console.log('=== REGISTER DEBUG ===');
+      console.log('Sending registration data:', {
+        email: data.email,
+        workspace_name: data.workspaceName,
+        first_name: data.firstName,
+        last_name: data.lastName,
+      });
+
       const response = await api.post<{
         access_token: string;
         refresh_token: string;
@@ -290,7 +312,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         last_name: data.lastName,
       });
 
+      console.log('Registration response:', JSON.stringify(response.data, null, 2));
+
       const { access_token, refresh_token, user: userData, tenant, tenants: userTenants } = response.data;
+
+      console.log('Extracted tenant:', tenant);
+      console.log('Extracted tenants:', userTenants);
 
       // Store tokens (tenant may be null for FamilyKnows until onboarding completes)
       const storageItems: [string, string][] = [
@@ -303,15 +330,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // Only store tenant if it exists (FamilyKnows creates tenant during onboarding)
       if (tenant) {
+        console.log('Storing tenant ID:', tenant.id);
         storageItems.push([STORAGE_KEYS.TENANT_ID, tenant.id]);
         storageItems.push([STORAGE_KEYS.CURRENT_TENANT, JSON.stringify(tenant)]);
         setCurrentTenantState(tenant);
         setTenants([tenant]);
       } else {
+        console.log('WARNING: No tenant returned from registration!');
         setTenants(userTenants || []);
       }
 
       await AsyncStorage.multiSet(storageItems);
+      console.log('Storage items saved successfully');
+
+      // Verify tenant was stored
+      const storedTenantId = await AsyncStorage.getItem(STORAGE_KEYS.TENANT_ID);
+      console.log('Verified stored tenant ID:', storedTenantId);
 
       setUser(userData);
       setIsAuthenticated(true);

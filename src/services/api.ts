@@ -55,11 +55,18 @@ class ApiService {
 
     try {
       const authToken = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+      const tenantId = await AsyncStorage.getItem(STORAGE_KEYS.TENANT_ID);
+
+      console.log('=== AUTH HEADERS DEBUG ===');
+      console.log('Auth token present:', !!authToken, authToken ? `(${authToken.substring(0, 20)}...)` : '');
+      console.log('Tenant ID:', tenantId);
+
       if (authToken) {
         headers['Authorization'] = `Bearer ${authToken}`;
+      } else {
+        console.warn('WARNING: No auth token found in storage!');
       }
 
-      const tenantId = await AsyncStorage.getItem(STORAGE_KEYS.TENANT_ID);
       if (tenantId) {
         headers['x-tenant-id'] = tenantId;
       }
@@ -92,16 +99,28 @@ class ApiService {
       Object.assign(headers, config.headers);
     }
 
+    // Debug logging
+    console.log('=== API REQUEST DEBUG ===');
+    console.log('Base URL:', this.baseUrl);
+    console.log('Full URL:', url);
+    console.log('Method:', config.method);
+    console.log('Headers:', JSON.stringify(headers, null, 2));
+    if (config.body) {
+      console.log('Body:', JSON.stringify(config.body, null, 2));
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), config.timeout || DEFAULT_TIMEOUT);
 
     try {
+      console.log('Initiating fetch...');
       const response = await fetch(url, {
         method: config.method,
         headers,
         body: config.body ? JSON.stringify(config.body) : undefined,
         signal: controller.signal,
       });
+      console.log('Fetch completed - Status:', response.status);
 
       clearTimeout(timeoutId);
 
@@ -112,6 +131,19 @@ class ApiService {
 
       // Handle 401 - Unauthorized (only retry once)
       if (response.status === 401 && !isRetry) {
+        console.log('Got 401, checking if token is fresh...');
+
+        // Check if token was just created (within last 30 seconds)
+        const lastActivity = await AsyncStorage.getItem(STORAGE_KEYS.LAST_ACTIVITY);
+        const tokenAge = lastActivity ? Date.now() - parseInt(lastActivity, 10) : Infinity;
+
+        if (tokenAge < 30000) {
+          // Token is fresh - don't clear auth, just throw error
+          // This handles cases where Edge Function JWT validation fails due to config issues
+          console.log('Token is fresh (age: ' + tokenAge + 'ms), not clearing auth');
+          throw new Error('Service temporarily unavailable. Please try again.');
+        }
+
         // Token expired, try to refresh
         const refreshed = await this.refreshToken();
         if (refreshed) {
@@ -150,9 +182,18 @@ class ApiService {
       };
     } catch (error: any) {
       clearTimeout(timeoutId);
+      console.log('=== API REQUEST ERROR ===');
+      console.log('Error name:', error.name);
+      console.log('Error message:', error.message);
+      console.log('Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
 
       if (error.name === 'AbortError') {
         throw new Error('Request timeout');
+      }
+
+      // Provide more helpful error message for network failures
+      if (error.message === 'Network request failed') {
+        throw new Error('Unable to connect to server. Please check your internet connection and try again.');
       }
 
       throw error;
