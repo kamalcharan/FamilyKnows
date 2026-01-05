@@ -317,7 +317,7 @@ export const ProfileSetupScreen: React.FC = () => {
       if (isFromSettings) {
         navigation.goBack();
       } else {
-        navigation.navigate('ThemeSelection', { isFromSettings: false });
+        navigation.navigate('GenderSelection', { isFromSettings: false });
       }
     } catch (err: any) {
       console.error('Error saving profile:', err);
@@ -328,7 +328,7 @@ export const ProfileSetupScreen: React.FC = () => {
   };
 
   const handleSkip = () => {
-    navigation.navigate('ThemeSelection', { isFromSettings: false });
+    navigation.navigate('GenderSelection', { isFromSettings: false });
   };
 
   return (

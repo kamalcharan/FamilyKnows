@@ -14,6 +14,7 @@ import { ForgotPasswordScreen } from '../../features/auth/screens/ForgotPassword
 import { StoryOnboardingScreen } from '../../features/onboarding/screens/StoryOnboardingScreen';
 import { MobileNumberScreen } from '../../features/onboarding/screens/MobileNumberScreen';
 import { ProfileSetupScreen } from '../../features/onboarding/screens/ProfileSetupScreen';
+import { GenderSelectionScreen } from '../../features/onboarding/screens/GenderSelectionScreen';
 import { ThemeSetupScreen } from '../../features/onboarding/screens/ThemeSetupScreen';
 import { LanguageSetupScreen } from '../../features/onboarding/screens/LanguageSetupScreen';
 import { GoogleDriveConnectScreen } from '../../features/onboarding/screens/GoogleDriveConnectScreen';
@@ -82,6 +83,13 @@ export const AuthStack: React.FC = () => {
       <Stack.Screen
         name="UserProfile"
         component={ProfileSetupScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="GenderSelection"
+        component={GenderSelectionScreen}
         options={{
           animation: 'slide_from_right',
         }}

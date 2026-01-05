@@ -15,7 +15,6 @@ import {
   Animated,
   Easing,
   TextInput,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { Text } from '@rneui/themed';
@@ -26,6 +25,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../context/AuthContext';
+import { Toast, ToastType } from '../../../components/Toast';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -55,6 +55,12 @@ export const SignupScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastType, setToastType] = useState<ToastType>('error');
+  const [toastTitle, setToastTitle] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
+
   // Refs for input focus
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
@@ -62,6 +68,14 @@ export const SignupScreen: React.FC = () => {
   // Entrance animations
   const cardOpacity = useRef(new Animated.Value(0)).current;
   const cardTranslateY = useRef(new Animated.Value(40)).current;
+
+  // Helper function to show toast
+  const showToast = (type: ToastType, title: string, message?: string) => {
+    setToastType(type);
+    setToastTitle(title);
+    setToastMessage(message || '');
+    setToastVisible(true);
+  };
 
   useEffect(() => {
     Animated.parallel([
@@ -120,11 +134,10 @@ export const SignupScreen: React.FC = () => {
 
     // Validate that we have the required data from StoryOnboarding
     if (!prefillFirstName || !prefillLastName || !prefillSpaceName) {
-      Alert.alert(
-        'Missing Information',
-        'Please go back and complete your profile information first.',
-        [{ text: 'OK', onPress: () => navigation.navigate('StoryOnboarding' as any) }]
-      );
+      showToast('warning', 'Missing Information', 'Please go back and complete your profile information first.');
+      setTimeout(() => {
+        navigation.navigate('StoryOnboarding' as any);
+      }, 2000);
       return;
     }
 
@@ -150,16 +163,31 @@ export const SignupScreen: React.FC = () => {
         workspaceName: prefillSpaceName,
       });
       console.log('Registration successful!');
+      // Show success toast
+      showToast('success', 'Account Created', 'Welcome to FamilyKnows!');
       // Navigation will happen via useEffect when isAuthenticated changes
     } catch (error: any) {
       console.log('Registration error:', error);
       console.log('Error name:', error.name);
       console.log('Error message:', error.message);
-      Alert.alert(
-        'Registration Failed',
-        error.message || 'Please check your information and try again.',
-        [{ text: 'OK' }]
-      );
+
+      const errorMessage = error.message || 'Please check your information and try again.';
+
+      // Check for specific error types
+      if (errorMessage.toLowerCase().includes('already') ||
+          errorMessage.toLowerCase().includes('exists') ||
+          errorMessage.toLowerCase().includes('registered')) {
+        showToast('error', 'Email Already Registered', 'This email is already in use. Try signing in instead.');
+      } else if (errorMessage.toLowerCase().includes('network') ||
+                 errorMessage.toLowerCase().includes('connect')) {
+        showToast('warning', 'Connection Error', 'Please check your internet connection.');
+      } else if (errorMessage.toLowerCase().includes('timeout')) {
+        showToast('warning', 'Request Timeout', 'The server is taking too long. Please try again.');
+      } else if (errorMessage.toLowerCase().includes('password')) {
+        showToast('error', 'Password Error', errorMessage);
+      } else {
+        showToast('error', 'Registration Failed', errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -178,6 +206,16 @@ export const SignupScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
+
+      {/* Toast Component */}
+      <Toast
+        visible={toastVisible}
+        type={toastType}
+        title={toastTitle}
+        message={toastMessage}
+        onDismiss={() => setToastVisible(false)}
+        duration={4000}
+      />
 
       {/* IMMERSIVE BACKGROUND */}
       <LinearGradient

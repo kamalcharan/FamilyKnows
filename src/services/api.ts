@@ -23,6 +23,15 @@ const X_PRODUCT = 'familyknows';
 // Default timeout
 const DEFAULT_TIMEOUT = 30000;
 
+// Auth endpoints that should NOT trigger session refresh logic on 401
+// These endpoints return 401 for invalid credentials, not expired sessions
+const AUTH_ENDPOINTS = [
+  '/api/FKauth/login',
+  '/api/FKauth/register',
+  '/api/FKauth/reset-password',
+  '/api/FKauth/verify-password',
+];
+
 // Request interceptor type
 interface RequestConfig {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -47,6 +56,11 @@ class ApiService {
       'Content-Type': 'application/json',
       'x-product': X_PRODUCT,
     };
+  }
+
+  // Check if endpoint is an auth endpoint (should not trigger session refresh)
+  private isAuthEndpoint(endpoint: string): boolean {
+    return AUTH_ENDPOINTS.some(authEndpoint => endpoint.startsWith(authEndpoint));
   }
 
   // Get auth headers from storage
@@ -129,7 +143,30 @@ class ApiService {
         await this.updateLastActivity();
       }
 
-      // Handle 401 - Unauthorized (only retry once)
+      // Parse response body FIRST before handling status codes
+      let data: T;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = await response.text() as unknown as T;
+      }
+
+      // For auth endpoints (login, register, etc.), return the actual error message
+      // Don't apply session refresh logic - 401 means invalid credentials
+      if (this.isAuthEndpoint(endpoint)) {
+        if (!response.ok) {
+          const errorMessage = (data as any)?.message || (data as any)?.error || 'Request failed';
+          throw new Error(errorMessage);
+        }
+        return {
+          data,
+          status: response.status,
+          ok: response.ok,
+        };
+      }
+
+      // For non-auth endpoints, handle 401 with session refresh logic
       if (response.status === 401 && !isRetry) {
         console.log('Got 401, checking if token is fresh...');
 
@@ -139,7 +176,6 @@ class ApiService {
 
         if (tokenAge < 30000) {
           // Token is fresh - don't clear auth, just throw error
-          // This handles cases where Edge Function JWT validation fails due to config issues
           console.log('Token is fresh (age: ' + tokenAge + 'ms), not clearing auth');
           throw new Error('Service temporarily unavailable. Please try again.');
         }
@@ -159,15 +195,6 @@ class ApiService {
       if (response.status === 401 && isRetry) {
         await this.clearAuth();
         throw new Error('Session expired. Please login again.');
-      }
-
-      // Parse response
-      let data: T;
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        data = await response.text() as unknown as T;
       }
 
       if (!response.ok) {

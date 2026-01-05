@@ -22,6 +22,7 @@ export type AuthStackParamList = {
   // Onboarding screens (in order) - all carry prefill data
   PhoneAuth: { isFromSettings?: boolean } & OnboardingPrefillData;
   UserProfile: { isFromSettings: boolean } & OnboardingPrefillData;
+  GenderSelection: { isFromSettings: boolean } & OnboardingPrefillData;
   ThemeSelection: { isFromSettings: boolean } & OnboardingPrefillData;
   LanguageSelection: { isFromSettings: boolean } & OnboardingPrefillData;
   GoogleDriveConnect: { isFromSettings: boolean } & OnboardingPrefillData;
@@ -45,6 +46,7 @@ export type AuthStackParamList = {
 export type OnboardingStackParamList = {
   PhoneAuth: { isFromSettings?: boolean } & OnboardingPrefillData;
   UserProfile: { isFromSettings: boolean } & OnboardingPrefillData;
+  GenderSelection: { isFromSettings: boolean } & OnboardingPrefillData;
   ThemeSelection: { isFromSettings: boolean } & OnboardingPrefillData;
   LanguageSelection: { isFromSettings: boolean } & OnboardingPrefillData;
   GoogleDriveConnect: { isFromSettings: boolean } & OnboardingPrefillData;

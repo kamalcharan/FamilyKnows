@@ -14,7 +14,6 @@ import {
   Animated,
   Easing,
   TextInput,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { Text } from '@rneui/themed';
@@ -26,6 +25,7 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
+import { Toast, ToastType } from '../../../components/Toast';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -42,6 +42,12 @@ export const LoginScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastType, setToastType] = useState<ToastType>('error');
+  const [toastTitle, setToastTitle] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
+
   // Refs for input focus
   const passwordInputRef = useRef<TextInput>(null);
 
@@ -51,6 +57,14 @@ export const LoginScreen: React.FC = () => {
   const cardOpacity = useRef(new Animated.Value(0)).current;
   const cardTranslateY = useRef(new Animated.Value(40)).current;
   const footerOpacity = useRef(new Animated.Value(0)).current;
+
+  // Helper function to show toast
+  const showToast = (type: ToastType, title: string, message?: string) => {
+    setToastType(type);
+    setToastTitle(title);
+    setToastMessage(message || '');
+    setToastVisible(true);
+  };
 
   useEffect(() => {
     // Staggered entrance animation
@@ -192,11 +206,22 @@ export const LoginScreen: React.FC = () => {
       await login(email.trim().toLowerCase(), password);
       // Navigation will happen via useEffect when isAuthenticated changes
     } catch (error: any) {
-      Alert.alert(
-        'Login Failed',
-        error.message || 'Please check your credentials and try again.',
-        [{ text: 'OK' }]
-      );
+      // Determine the appropriate error message and type
+      const errorMessage = error.message || 'Please check your credentials and try again.';
+
+      // Check for specific error types
+      if (errorMessage.toLowerCase().includes('invalid') ||
+          errorMessage.toLowerCase().includes('password') ||
+          errorMessage.toLowerCase().includes('credentials')) {
+        showToast('error', 'Invalid Credentials', 'Please check your email and password.');
+      } else if (errorMessage.toLowerCase().includes('network') ||
+                 errorMessage.toLowerCase().includes('connect')) {
+        showToast('warning', 'Connection Error', 'Please check your internet connection.');
+      } else if (errorMessage.toLowerCase().includes('timeout')) {
+        showToast('warning', 'Request Timeout', 'The server is taking too long. Please try again.');
+      } else {
+        showToast('error', 'Login Failed', errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -214,6 +239,16 @@ export const LoginScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
+
+      {/* Toast Component */}
+      <Toast
+        visible={toastVisible}
+        type={toastType}
+        title={toastTitle}
+        message={toastMessage}
+        onDismiss={() => setToastVisible(false)}
+        duration={4000}
+      />
 
       {/* IMMERSIVE BACKGROUND */}
       <LinearGradient

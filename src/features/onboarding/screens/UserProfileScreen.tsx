@@ -117,8 +117,8 @@ export const UserProfileScreen: React.FC<Props> = ({ navigation, route }) => {
         // If from settings, just go back
         navigation.goBack();
       } else {
-        // Continue onboarding - pass prefillFamily forward
-        navigation.navigate('ThemeSelection', {
+        // Continue onboarding - navigate to Gender Selection
+        navigation.navigate('GenderSelection', {
           isFromSettings: false,
           prefillFamily,
         });
@@ -128,7 +128,7 @@ export const UserProfileScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const handleSkip = () => {
     // Pass prefillFamily forward even when skipping
-    navigation.navigate('ThemeSelection', {
+    navigation.navigate('GenderSelection', {
       isFromSettings: false,
       prefillFamily,
     });
