@@ -36,45 +36,20 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
   const userName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User' : 'User';
   const userEmail = user?.email || 'user@example.com';
 
+  // Simplified menu - Unified Profile consolidates multiple settings
   const menuItems = [
     {
       id: 'profile',
-      title: 'Profile',
+      title: 'My Profile',
+      subtitle: 'Personal info, theme, language',
       icon: 'account-circle',
-      screen: 'SettingsProfile',
-      params: { isFromSettings: true },
-    },
-    {
-      id: 'phone',
-      title: 'Phone Number',
-      icon: 'phone',
-      screen: 'SettingsPhone',
-      params: { isFromSettings: true },
-    },
-    {
-      id: 'theme',
-      title: 'Theme',
-      icon: 'palette',
-      screen: 'SettingsTheme',
-      params: { isFromSettings: true },
-    },
-    {
-      id: 'language',
-      title: 'Language',
-      icon: 'translate',
-      screen: 'SettingsLanguage',
-      params: { isFromSettings: true },
-    },
-    {
-      id: 'gdrive',
-      title: 'Google Drive',
-      icon: 'google-drive',
-      screen: 'SettingsGoogleDrive',
-      params: { isFromSettings: true },
+      screen: 'UnifiedProfile',
+      params: {},
     },
     {
       id: 'family',
       title: 'Family Settings',
+      subtitle: 'Members & invitations',
       icon: 'account-group',
       screen: 'SettingsFamily',
       params: { isFromSettings: true },
@@ -82,6 +57,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
     {
       id: 'pricing',
       title: 'Subscription',
+      subtitle: 'Plans & billing',
       icon: 'crown',
       screen: 'SettingsPricing',
       params: {},
@@ -182,17 +158,29 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
         style={styles.menuItem}
         onPress={() => handleMenuItemPress(item)}
       >
-        <MaterialCommunityIcons
-          name={item.icon}
-          size={24}
-          color={item.id === 'logout' ? theme.colors.semantic.error : theme.colors.utility.primaryText}
-        />
-        <Text style={[
-          styles.menuItemText,
-          { color: item.id === 'logout' ? theme.colors.semantic.error : theme.colors.utility.primaryText }
+        <View style={[
+          styles.menuIconContainer,
+          { backgroundColor: item.id === 'logout' ? theme.colors.semantic.error + '15' : theme.colors.brand.primary + '15' }
         ]}>
-          {item.title}
-        </Text>
+          <MaterialCommunityIcons
+            name={item.icon}
+            size={22}
+            color={item.id === 'logout' ? theme.colors.semantic.error : theme.colors.brand.primary}
+          />
+        </View>
+        <View style={styles.menuItemContent}>
+          <Text style={[
+            styles.menuItemText,
+            { color: item.id === 'logout' ? theme.colors.semantic.error : theme.colors.utility.primaryText }
+          ]}>
+            {item.title}
+          </Text>
+          {item.subtitle && (
+            <Text style={[styles.menuItemSubtitle, { color: theme.colors.utility.secondaryText }]}>
+              {item.subtitle}
+            </Text>
+          )}
+        </View>
         <MaterialCommunityIcons
           name="chevron-right"
           size={20}
@@ -317,12 +305,26 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    gap: 16,
+    paddingVertical: 14,
+    gap: 14,
+  },
+  menuIconContainer: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuItemContent: {
+    flex: 1,
   },
   menuItemText: {
     fontSize: 16,
-    flex: 1,
+    fontWeight: '500',
+  },
+  menuItemSubtitle: {
+    fontSize: 13,
+    marginTop: 2,
   },
   menuDivider: {
     height: 1,

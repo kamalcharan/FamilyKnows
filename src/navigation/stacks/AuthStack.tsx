@@ -21,6 +21,9 @@ import { GoogleDriveConnectScreen } from '../../features/onboarding/screens/Goog
 import { FamilySetupScreen } from '../../features/onboarding/screens/FamilySetupScreen';
 import { PricingScreen } from '../../features/onboarding/screens/PricingScreen';
 
+// Settings screens
+import { UnifiedProfileScreen } from '../../features/settings/screens/UnifiedProfileScreen';
+
 // Main app screens
 import { MainNavigator } from '../MainNavigator';
 
@@ -125,6 +128,43 @@ export const AuthStack: React.FC = () => {
       <Stack.Screen
         name="Pricing"
         component={PricingScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+
+      {/* Settings Screens (accessible from menu) */}
+      <Stack.Screen
+        name="UnifiedProfile"
+        component={UnifiedProfileScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="SettingsTheme"
+        component={ThemeSetupScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="SettingsLanguage"
+        component={LanguageSetupScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="SettingsGoogleDrive"
+        component={GoogleDriveConnectScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="SettingsFamily"
+        component={FamilySetupScreen}
         options={{
           animation: 'slide_from_right',
         }}

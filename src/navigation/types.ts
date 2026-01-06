@@ -30,6 +30,7 @@ export type AuthStackParamList = {
   Pricing: undefined;
 
   // Settings screens (accessible from menu)
+  UnifiedProfile: undefined;  // Consolidated profile view
   SettingsProfile: { isFromSettings: boolean };
   SettingsPhone: { isFromSettings: boolean };
   SettingsTheme: { isFromSettings: boolean };

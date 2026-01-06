@@ -1,5 +1,5 @@
 // src/features/onboarding/screens/LanguageSetupScreen.tsx
-// Storyboard-style language selection with English default
+// Language selection with variant support for onboarding (glass) and settings (normal) styles
 
 import React, { useState, useRef, useEffect } from 'react';
 import {
@@ -19,43 +19,38 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../context/AuthContext';
+import { useTheme } from '../../../theme/ThemeContext';
 import api from '../../../services/api';
+import Toast from 'react-native-toast-message';
+// Single source of truth for languages
+import { supportedLanguages, Language } from '../../../constants/languages';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 type LanguageSetupNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'LanguageSelection'>;
 type LanguageSetupRouteProp = RouteProp<AuthStackParamList, 'LanguageSelection'>;
 
-interface Language {
-  code: string;
-  name: string;
-  nativeName: string;
-  flag: string;
-}
+// Filter to only English and Telugu for now (as per i18n strategy)
+const ENABLED_LANGUAGES = supportedLanguages.filter(
+  lang => lang.code === 'en' || lang.code === 'te'
+);
 
-const LANGUAGES: Language[] = [
-  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
-  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
-  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳' },
-  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳' },
-  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳' },
-  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳' },
-  { code: 'mr', name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳' },
-  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇮🇳' },
-  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', flag: '🇮🇳' },
-  { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
-];
+// Variant types for different visual styles
+type ScreenVariant = 'glass' | 'normal';
 
 export const LanguageSetupScreen: React.FC = () => {
   const navigation = useNavigation<LanguageSetupNavigationProp>();
   const route = useRoute<LanguageSetupRouteProp>();
   const insets = useSafeAreaInsets();
   const { user, currentTenant } = useAuth();
+  const { theme } = useTheme();
 
   const isFromSettings = route?.params?.isFromSettings || false;
+  // Determine variant: glass for onboarding, normal for settings
+  const variant: ScreenVariant = isFromSettings ? 'normal' : 'glass';
 
-  // Default to English
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  // Default to English, or use user's saved language
+  const [selectedLanguage, setSelectedLanguage] = useState(user?.language || 'en');
   const [isLoading, setIsLoading] = useState(false);
 
   // Animations
@@ -90,6 +85,12 @@ export const LanguageSetupScreen: React.FC = () => {
         },
       });
 
+      Toast.show({
+        type: 'success',
+        text1: 'Language Updated',
+        text2: 'Your language preference has been saved.',
+      });
+
       if (isFromSettings) {
         navigation.goBack();
       } else {
@@ -101,6 +102,11 @@ export const LanguageSetupScreen: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error saving language:', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Save Failed',
+        text2: 'Could not save language preference. Please try again.',
+      });
       // Still navigate even if save fails
       if (isFromSettings) {
         navigation.goBack();
@@ -122,6 +128,29 @@ export const LanguageSetupScreen: React.FC = () => {
     });
   };
 
+  // Dynamic styles based on variant
+  const getVariantStyles = () => {
+    if (variant === 'normal') {
+      return {
+        backgroundColor: theme.colors.utility.primaryBackground,
+        textColor: theme.colors.utility.primaryText,
+        secondaryTextColor: theme.colors.utility.secondaryText,
+        cardBg: theme.colors.utility.secondaryBackground,
+        statusBarStyle: theme.isDark ? 'light-content' : 'dark-content',
+      };
+    }
+    // Glass variant (default onboarding style)
+    return {
+      backgroundColor: '#0F172A',
+      textColor: '#FFF',
+      secondaryTextColor: 'rgba(255,255,255,0.6)',
+      cardBg: 'rgba(30, 41, 59, 0.8)',
+      statusBarStyle: 'light-content',
+    };
+  };
+
+  const variantStyles = getVariantStyles();
+
   const renderLanguageItem = (lang: Language) => {
     const isSelected = selectedLanguage === lang.code;
 
@@ -130,6 +159,7 @@ export const LanguageSetupScreen: React.FC = () => {
         key={lang.code}
         style={[
           styles.languageItem,
+          { backgroundColor: variantStyles.cardBg },
           isSelected && styles.languageItemSelected,
         ]}
         onPress={() => setSelectedLanguage(lang.code)}
@@ -137,8 +167,8 @@ export const LanguageSetupScreen: React.FC = () => {
       >
         <Text style={styles.languageFlag}>{lang.flag}</Text>
         <View style={styles.languageText}>
-          <Text style={styles.languageName}>{lang.name}</Text>
-          <Text style={styles.languageNative}>{lang.nativeName}</Text>
+          <Text style={[styles.languageName, { color: variantStyles.textColor }]}>{lang.name}</Text>
+          <Text style={[styles.languageNative, { color: variantStyles.secondaryTextColor }]}>{lang.nativeName}</Text>
         </View>
         {isSelected && (
           <View style={styles.selectedIcon}>
@@ -150,49 +180,65 @@ export const LanguageSetupScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <View style={[styles.container, { backgroundColor: variantStyles.backgroundColor }]}>
+      <StatusBar barStyle={variantStyles.statusBarStyle as any} />
 
-      {/* Gradient Background */}
-      <LinearGradient
-        colors={['#0F172A', '#1E293B', '#0F172A']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Stars Background */}
-      <View style={styles.starsContainer}>
-        {[...Array(40)].map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.star,
-              {
-                left: Math.random() * SCREEN_WIDTH,
-                top: Math.random() * SCREEN_HEIGHT,
-                opacity: 0.2 + Math.random() * 0.4,
-                width: 1 + Math.random() * 2,
-                height: 1 + Math.random() * 2,
-              },
-            ]}
+      {/* Gradient Background - only for glass variant */}
+      {variant === 'glass' && (
+        <>
+          <LinearGradient
+            colors={['#0F172A', '#1E293B', '#0F172A']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
           />
-        ))}
-      </View>
 
-      {/* Progress Indicator */}
-      <View style={[styles.progressContainer, { top: insets.top + 20 }]}>
-        <View style={styles.progressDots}>
-          <View style={[styles.progressDot, styles.progressDotCompleted]} />
-          <View style={[styles.progressDot, styles.progressDotCompleted]} />
-          <View style={[styles.progressDot, styles.progressDotCompleted]} />
-          <View style={[styles.progressDot, styles.progressDotActive]} />
+          {/* Stars Background */}
+          <View style={styles.starsContainer}>
+            {[...Array(40)].map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.star,
+                  {
+                    left: Math.random() * SCREEN_WIDTH,
+                    top: Math.random() * SCREEN_HEIGHT,
+                    opacity: 0.2 + Math.random() * 0.4,
+                    width: 1 + Math.random() * 2,
+                    height: 1 + Math.random() * 2,
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        </>
+      )}
+
+      {/* Progress Indicator - only for onboarding (glass variant) */}
+      {variant === 'glass' && (
+        <View style={[styles.progressContainer, { top: insets.top + 20 }]}>
+          <View style={styles.progressDots}>
+            <View style={[styles.progressDot, styles.progressDotCompleted]} />
+            <View style={[styles.progressDot, styles.progressDotCompleted]} />
+            <View style={[styles.progressDot, styles.progressDotCompleted]} />
+            <View style={[styles.progressDot, styles.progressDotActive]} />
+          </View>
+          <Text style={styles.stepText}>Step 4 of 4</Text>
         </View>
-        <Text style={styles.stepText}>Step 4 of 4</Text>
-      </View>
+      )}
 
-      {/* Skip Button */}
-      {!isFromSettings && (
+      {/* Back Button for settings variant */}
+      {variant === 'normal' && (
+        <TouchableOpacity
+          style={[styles.backButton, { top: insets.top + 10 }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color={variantStyles.textColor} />
+        </TouchableOpacity>
+      )}
+
+      {/* Skip Button - only for onboarding */}
+      {variant === 'glass' && (
         <TouchableOpacity
           style={[styles.skipButton, { top: insets.top + 20 }]}
           onPress={handleSkip}
@@ -202,7 +248,7 @@ export const LanguageSetupScreen: React.FC = () => {
       )}
 
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 80 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + (variant === 'normal' ? 60 : 80) }]}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View
@@ -215,40 +261,54 @@ export const LanguageSetupScreen: React.FC = () => {
           ]}
         >
           {/* Icon */}
-          <View style={styles.iconContainer}>
-            <MaterialCommunityIcons name="translate" size={48} color="#3B82F6" />
+          <View style={[styles.iconContainer, variant === 'normal' && { backgroundColor: theme.colors.brand.primary + '15', borderColor: theme.colors.brand.primary + '30' }]}>
+            <MaterialCommunityIcons name="translate" size={48} color={variant === 'normal' ? theme.colors.brand.primary : '#3B82F6'} />
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>Select Language</Text>
-          <Text style={styles.subtitle}>Choose your preferred language</Text>
+          <Text style={[styles.title, { color: variantStyles.textColor }]}>
+            {variant === 'normal' ? 'Language' : 'Select Language'}
+          </Text>
+          <Text style={[styles.subtitle, { color: variantStyles.secondaryTextColor }]}>
+            Choose your preferred language
+          </Text>
 
-          {/* Language List */}
+          {/* Language List - using constants as single source of truth */}
           <View style={styles.languageList}>
-            {LANGUAGES.map(renderLanguageItem)}
+            {ENABLED_LANGUAGES.map(renderLanguageItem)}
           </View>
 
-          {/* Finish Button */}
+          {/* Button */}
           <TouchableOpacity
-            style={[styles.finishButton, isLoading && styles.buttonLoading]}
+            style={[
+              styles.finishButton,
+              isLoading && styles.buttonLoading,
+              variant === 'normal' && { backgroundColor: theme.colors.brand.primary }
+            ]}
             onPress={handleContinue}
             disabled={isLoading}
             activeOpacity={0.8}
           >
             {isLoading ? (
-              <Text style={styles.finishButtonText}>Setting up...</Text>
+              <Text style={styles.finishButtonText}>Saving...</Text>
             ) : (
               <>
-                <Text style={styles.finishButtonText}>Get Started</Text>
-                <MaterialCommunityIcons name="rocket-launch" size={20} color="#FFF" />
+                <Text style={styles.finishButtonText}>
+                  {variant === 'normal' ? 'Save' : 'Get Started'}
+                </Text>
+                {variant === 'glass' && (
+                  <MaterialCommunityIcons name="rocket-launch" size={20} color="#FFF" />
+                )}
               </>
             )}
           </TouchableOpacity>
 
-          {/* Welcome Text */}
-          <Text style={styles.welcomeText}>
-            You're all set! Welcome to FamilyKnows.
-          </Text>
+          {/* Welcome Text - only for onboarding */}
+          {variant === 'glass' && (
+            <Text style={styles.welcomeText}>
+              You're all set! Welcome to FamilyKnows.
+            </Text>
+          )}
         </Animated.View>
       </ScrollView>
     </View>
@@ -301,6 +361,12 @@ const styles = StyleSheet.create({
     zIndex: 10,
     paddingVertical: 8,
     paddingHorizontal: 16,
+  },
+  backButton: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 10,
+    padding: 8,
   },
   skipText: {
     color: 'rgba(255,255,255,0.6)',

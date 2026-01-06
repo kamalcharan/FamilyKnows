@@ -15,6 +15,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../../navigation/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../../context/AuthContext';
+import { STORAGE_KEYS } from '../../../services/api';
 
 const { width, height } = Dimensions.get('window');
 const INTRO_SHOWN_KEY = '@FamilyKnows:introShown';
@@ -27,6 +29,7 @@ type SplashScreenNavigationProp = NativeStackNavigationProp<
 export const SplashScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<SplashScreenNavigationProp>();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   // Animation values
   const logoScale = useRef(new Animated.Value(0.3)).current;
@@ -38,6 +41,38 @@ export const SplashScreen: React.FC = () => {
   const taglineTranslateY = useRef(new Animated.Value(30)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const shimmerAnim = useRef(new Animated.Value(0)).current;
+
+  // Determine where to navigate based on auth state
+  const determineNavigation = async () => {
+    // Wait for auth loading to complete
+    if (isLoading) return;
+
+    // Check if intro has been shown before
+    const introShown = await AsyncStorage.getItem(INTRO_SHOWN_KEY);
+
+    if (isAuthenticated && user) {
+      // User is authenticated - check registration status
+      if (user.registration_status === 'complete') {
+        // Fully registered user - go to main app
+        navigation.replace('Main');
+      } else if (user.registration_status === 'pending_workspace') {
+        // User needs to complete onboarding - go to family setup
+        navigation.replace('FamilySetup', { isFromSettings: false });
+      } else {
+        // Default: go to main (assume complete if status is undefined)
+        navigation.replace('Main');
+      }
+    } else {
+      // Not authenticated
+      if (introShown) {
+        // Already seen intro - go straight to login
+        navigation.replace('Login', {});
+      } else {
+        // New user - show intro screens
+        navigation.replace('Intro');
+      }
+    }
+  };
 
   useEffect(() => {
     // Staggered entrance animation sequence
@@ -123,13 +158,13 @@ export const SplashScreen: React.FC = () => {
       })
     ).start();
 
-    // Navigate after delay - Go to Intro screens first
+    // Navigate after delay - check auth state and navigate appropriately
     const timer = setTimeout(() => {
-      navigation.replace('Intro');
+      determineNavigation();
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [navigation, logoScale, logoOpacity, logoRotate, appNameOpacity, appNameTranslateY, taglineOpacity, taglineTranslateY, pulseAnim, shimmerAnim]);
+  }, [navigation, logoScale, logoOpacity, logoRotate, appNameOpacity, appNameTranslateY, taglineOpacity, taglineTranslateY, pulseAnim, shimmerAnim, isLoading]);
 
   const rotateInterpolate = logoRotate.interpolate({
     inputRange: [0, 1],

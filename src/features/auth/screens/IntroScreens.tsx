@@ -282,7 +282,7 @@ export const IntroScreens: React.FC<Props> = ({ navigation }) => {
       </TouchableOpacity>
 
       {/* FIXED ANIMATED ELEMENTS LAYER */}
-      <View style={styles.fixedLayer} pointerEvents="none">
+      <View style={styles.fixedLayer} pointerEvents="box-none">
         {/* PAGE 1: Welcome */}
         <Animated.View
           style={[
@@ -394,16 +394,7 @@ export const IntroScreens: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.hubText}>& More</Text>
             </View>
           </View>
-
-          {/* Get Started Button */}
-          <TouchableOpacity
-            style={styles.getStartedButton}
-            onPress={handleFinish}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.getStartedText}>Get Started</Text>
-            <MaterialCommunityIcons name="arrow-right" size={20} color="#FFF" />
-          </TouchableOpacity>
+          {/* Button moved to separate layer above scroll for touch events */}
         </Animated.View>
       </View>
 
@@ -418,8 +409,29 @@ export const IntroScreens: React.FC<Props> = ({ navigation }) => {
         )}
       >
         {/* Empty scroll area - content is in fixed layer */}
-        <View style={{ height: TOTAL_HEIGHT }} />
+        <View style={{ height: TOTAL_HEIGHT }} pointerEvents="box-none" />
       </Animated.ScrollView>
+
+      {/* Get Started Button - separate layer above scroll for touch events */}
+      <Animated.View
+        style={[
+          styles.getStartedContainer,
+          {
+            opacity: categoriesOpacity,
+            bottom: insets.bottom + 100,
+          },
+        ]}
+        pointerEvents="box-none"
+      >
+        <TouchableOpacity
+          style={styles.getStartedButton}
+          onPress={handleFinish}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.getStartedText}>Get Started</Text>
+          <MaterialCommunityIcons name="arrow-right" size={20} color="#FFF" />
+        </TouchableOpacity>
+      </Animated.View>
 
       {/* Scroll Progress Indicator */}
       <View style={[styles.progressContainer, { bottom: insets.bottom + 20 }]}>
@@ -666,6 +678,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
+  // Get Started Button Container (positioned above scroll layer)
+  getStartedContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 100,
+  },
   // Get Started Button
   getStartedButton: {
     flexDirection: 'row',

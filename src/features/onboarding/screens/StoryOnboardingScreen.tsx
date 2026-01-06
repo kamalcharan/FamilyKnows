@@ -308,6 +308,13 @@ export const StoryOnboardingScreen: React.FC = () => {
                 autoCapitalize="words"
               />
             </View>
+            {/* Scroll indicator after name input */}
+            {(firstName && lastName) && (
+              <View style={styles.scrollHintInline}>
+                <MaterialCommunityIcons name="chevron-double-down" size={28} color="rgba(255,255,255,0.5)" />
+                <Text style={styles.scrollHintTextInline}>Scroll down to continue</Text>
+              </View>
+            )}
           </KeyboardAvoidingView>
         </View>
 
@@ -324,7 +331,7 @@ export const StoryOnboardingScreen: React.FC = () => {
               <Text style={styles.cardTitle}>Name your space.</Text>
               <Text style={styles.cardSubtitle}>Your family's digital identity.</Text>
               <TextInput
-                placeholder="e.g. The Charan Family"
+                placeholder={firstName ? `e.g. The ${firstName}'s Family` : "e.g. The Smith Family"}
                 placeholderTextColor="rgba(255,255,255,0.4)"
                 value={spaceName}
                 onChangeText={setSpaceName}
@@ -332,6 +339,13 @@ export const StoryOnboardingScreen: React.FC = () => {
                 autoCapitalize="words"
               />
             </View>
+            {/* Scroll indicator after space name input */}
+            {spaceName && (
+              <View style={styles.scrollHintInline}>
+                <MaterialCommunityIcons name="chevron-double-down" size={28} color="rgba(255,255,255,0.5)" />
+                <Text style={styles.scrollHintTextInline}>Scroll down to finish</Text>
+              </View>
+            )}
           </KeyboardAvoidingView>
         </View>
 
@@ -646,5 +660,16 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.4)',
     fontSize: 12,
     marginTop: 16,
+  },
+  scrollHintInline: {
+    alignItems: 'center',
+    marginTop: 24,
+    paddingVertical: 12,
+  },
+  scrollHintTextInline: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 13,
+    marginTop: 4,
+    fontWeight: '500',
   },
 });
