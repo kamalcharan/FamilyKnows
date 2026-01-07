@@ -15,6 +15,7 @@ import {
   ScrollView,
   Modal,
   FlatList,
+  Alert,
 } from 'react-native';
 import { Text } from '@rneui/themed';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -100,6 +101,7 @@ export const MobileNumberScreen: React.FC = () => {
     if (!validatePhone()) return;
 
     setIsLoading(true);
+    setError('');
     try {
       // Call FKonboarding API to complete personal-profile step
       // Note: Mobile number is part of personal-profile step in FamilyKnows
@@ -112,17 +114,39 @@ export const MobileNumberScreen: React.FC = () => {
         },
       });
 
-      // Navigate to next step
-      if (isFromSettings) {
-        navigation.goBack();
-      } else {
-        navigation.navigate('UserProfile', {
-          isFromSettings: false,
-        });
-      }
+      // Show success message
+      Alert.alert(
+        'Success',
+        'Mobile number saved successfully!',
+        [
+          {
+            text: 'Continue',
+            onPress: () => {
+              // Navigate to next step
+              if (isFromSettings) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('UserProfile', {
+                  isFromSettings: false,
+                });
+              }
+            },
+          },
+        ]
+      );
     } catch (err: any) {
       console.error('Error saving mobile:', err);
-      setError(err.message || 'Failed to save mobile number');
+      const errorMessage = err.message || 'Failed to save mobile number';
+      setError(errorMessage);
+
+      // Show error alert for better visibility
+      Alert.alert(
+        'Error',
+        errorMessage.includes('duplicate') || errorMessage.includes('already exists')
+          ? 'This mobile number is already registered. Please use a different number.'
+          : errorMessage,
+        [{ text: 'OK' }]
+      );
     } finally {
       setIsLoading(false);
     }

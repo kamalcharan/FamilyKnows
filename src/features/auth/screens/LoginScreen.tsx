@@ -130,8 +130,8 @@ export const LoginScreen: React.FC = () => {
             });
           } else {
             // Find first incomplete required step
-            // Steps is an OBJECT: { mobile: {...}, 'personal-profile': {...}, theme: {...}, language: {...} }
-            const stepOrder = ['mobile', 'personal-profile', 'theme', 'language'];
+            // Step order must match FKonboarding config required steps
+            const stepOrder = ['personal-profile', 'theme', 'language', 'family-space'];
             const steps = result.data?.steps || {};
 
             let firstIncompleteStep: string | null = null;
@@ -148,11 +148,9 @@ export const LoginScreen: React.FC = () => {
             if (firstIncompleteStep) {
               // Navigate to the appropriate onboarding screen
               switch (firstIncompleteStep) {
-                case 'mobile':
-                  navigation.replace('PhoneAuth' as any, { isFromSettings: false });
-                  break;
                 case 'personal-profile':
-                  navigation.replace('UserProfile' as any, { isFromSettings: false });
+                  // Personal profile includes mobile number entry
+                  navigation.replace('PhoneAuth' as any, { isFromSettings: false });
                   break;
                 case 'theme':
                   navigation.replace('ThemeSelection' as any, { isFromSettings: false });
@@ -160,12 +158,18 @@ export const LoginScreen: React.FC = () => {
                 case 'language':
                   navigation.replace('LanguageSelection' as any, { isFromSettings: false });
                   break;
+                case 'family-space':
+                  navigation.replace('FamilySetup' as any, { isFromSettings: false });
+                  break;
                 default:
                   navigation.replace('PhoneAuth' as any, { isFromSettings: false });
               }
             } else {
-              // No pending steps found but needs_onboarding is true - start from beginning
-              navigation.replace('PhoneAuth' as any, { isFromSettings: false });
+              // No pending steps found but needs_onboarding is true - go to main
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Main' }],
+              });
             }
           }
         } catch (error) {

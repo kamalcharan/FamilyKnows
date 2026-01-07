@@ -163,71 +163,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => subscription.remove();
   }, [isAuthenticated, checkSession, resetSessionTimer]);
 
-  // Initialize auth state from storage
+  // Initialize auth state - Banking app style: always require fresh login
   useEffect(() => {
     const initializeAuth = async () => {
       try {
         setIsLoading(true);
 
-        const authToken = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-        if (!authToken) {
-          setIsLoading(false);
-          return;
-        }
+        // Banking app behavior: Clear all stored credentials on app start
+        // User must login fresh every time the app is opened
+        console.log('Banking mode: Clearing stored credentials, requiring fresh login');
+        await api.clearAuth();
+        setUser(null);
+        setTenants([]);
+        setCurrentTenantState(null);
+        setIsAuthenticated(false);
 
-        // Check session validity
-        const isValid = await checkSession();
-        if (!isValid) {
-          await api.clearAuth();
-          setIsLoading(false);
-          return;
-        }
-
-        // Load cached data
-        const [userDataStr, tenantStr] = await AsyncStorage.multiGet([
-          STORAGE_KEYS.USER_DATA,
-          STORAGE_KEYS.CURRENT_TENANT,
-        ]);
-
-        if (userDataStr[1]) {
-          setUser(JSON.parse(userDataStr[1]));
-        }
-        if (tenantStr[1]) {
-          setCurrentTenantState(JSON.parse(tenantStr[1]));
-        }
-
-        // Verify token with server
-        try {
-          const response = await api.get<{ user: User; tenants: Tenant[] }>(API_ENDPOINTS.AUTH.USER);
-          setUser(response.data.user || response.data as unknown as User);
-
-          if (response.data.tenants) {
-            setTenants(response.data.tenants);
-          }
-
-          setIsAuthenticated(true);
-          resetSessionTimer();
-        } catch (error) {
-          console.error('Token verification failed:', error);
-
-          // Check if token is fresh (within last 30 seconds) - don't clear if so
-          const lastActivity = await AsyncStorage.getItem(STORAGE_KEYS.LAST_ACTIVITY);
-          const tokenAge = lastActivity ? Date.now() - parseInt(lastActivity, 10) : Infinity;
-
-          if (tokenAge < 30000) {
-            console.log('Token is fresh during init, keeping auth. Age:', tokenAge);
-            // Token is fresh but verification failed (likely service issue)
-            // Keep the auth state, assume token is valid
-            setIsAuthenticated(true);
-            resetSessionTimer();
-          } else {
-            console.log('Token is stale, clearing auth. Age:', tokenAge);
-            await api.clearAuth();
-            setUser(null);
-            setTenants([]);
-            setCurrentTenantState(null);
-          }
-        }
       } catch (error) {
         console.error('Auth initialization error:', error);
       } finally {

@@ -16,7 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../../navigation/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../../context/AuthContext';
-import { STORAGE_KEYS } from '../../../services/api';
+import { STORAGE_KEYS, api } from '../../../services/api';
 
 const { width, height } = Dimensions.get('window');
 const INTRO_SHOWN_KEY = '@FamilyKnows:introShown';
@@ -51,16 +51,74 @@ export const SplashScreen: React.FC = () => {
     const introShown = await AsyncStorage.getItem(INTRO_SHOWN_KEY);
 
     if (isAuthenticated && user) {
-      // User is authenticated - check registration status
-      if (user.registration_status === 'complete') {
-        // Fully registered user - go to main app
-        navigation.replace('Main');
-      } else if (user.registration_status === 'pending_workspace') {
-        // User needs to complete onboarding - go to family setup
-        navigation.replace('FamilySetup', { isFromSettings: false });
-      } else {
-        // Default: go to main (assume complete if status is undefined)
-        navigation.replace('Main');
+      // User is authenticated - check actual onboarding status from API
+      try {
+        const response = await api.get<{
+          needs_onboarding: boolean;
+          data: {
+            is_complete: boolean;
+            current_step: number;
+            steps: Record<string, { id: string; status: string; is_required: boolean; sequence: number }>;
+          };
+        }>('/api/FKonboarding/status');
+
+        const result = response.data;
+        console.log('SplashScreen - Onboarding status:', JSON.stringify(result, null, 2));
+
+        // Check if onboarding is complete
+        if (!result.needs_onboarding || result.data?.is_complete) {
+          // Onboarding complete - go to main app
+          navigation.replace('Main');
+        } else {
+          // Find first incomplete required step
+          const stepOrder = ['personal-profile', 'gender', 'theme', 'language', 'family-space', 'storage', 'family-invite'];
+          const steps = result.data?.steps || {};
+
+          let firstIncompleteStep: string | null = null;
+          for (const stepId of stepOrder) {
+            const step = steps[stepId];
+            if (step && step.status === 'pending' && step.is_required) {
+              firstIncompleteStep = stepId;
+              break;
+            }
+          }
+
+          console.log('SplashScreen - First incomplete step:', firstIncompleteStep);
+
+          // Navigate to appropriate onboarding screen
+          if (firstIncompleteStep) {
+            switch (firstIncompleteStep) {
+              case 'personal-profile':
+                navigation.replace('UserProfile' as any, { isFromSettings: false });
+                break;
+              case 'theme':
+                navigation.replace('ThemeSelection' as any, { isFromSettings: false });
+                break;
+              case 'language':
+                navigation.replace('LanguageSelection' as any, { isFromSettings: false });
+                break;
+              case 'family-space':
+                navigation.replace('FamilySetup', { isFromSettings: false });
+                break;
+              default:
+                // Default to family setup for unknown steps
+                navigation.replace('FamilySetup', { isFromSettings: false });
+            }
+          } else {
+            // No pending required steps - might have optional steps pending, go to main
+            navigation.replace('Main');
+          }
+        }
+      } catch (error) {
+        console.log('SplashScreen - Error checking onboarding status:', error);
+        // On error, fall back to registration_status check
+        if (user.registration_status === 'complete') {
+          navigation.replace('Main');
+        } else if (user.registration_status === 'pending_workspace') {
+          navigation.replace('FamilySetup', { isFromSettings: false });
+        } else {
+          navigation.replace('Main');
+        }
       }
     } else {
       // Not authenticated

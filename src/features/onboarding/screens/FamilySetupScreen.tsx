@@ -20,6 +20,7 @@ import { RouteProp } from '@react-navigation/native';
 import { OnboardingStackParamList } from '../../../navigation/types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import FamilyActionSheet from '../components/FamilyActionSheet';
+import api from '../../../services/api';
 
 type FamilySetupNavigationProp = NativeStackNavigationProp<OnboardingStackParamList, 'FamilySetup'>;
 type FamilySetupRouteProp = RouteProp<OnboardingStackParamList, 'FamilySetup'>;
@@ -84,6 +85,49 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
   const [familyName, setFamilyName] = useState(prefillFamily || '');
   const [inviteCode, setInviteCode] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  // Fetch existing data to determine CREATE vs EDIT mode
+  useEffect(() => {
+    const fetchExistingData = async () => {
+      try {
+        const response = await api.get<{
+          data: {
+            step_data?: {
+              'family-space'?: {
+                name?: string;
+                family_name?: string;
+              };
+            };
+            steps?: Record<string, { status: string }>;
+          };
+        }>('/api/FKonboarding/status');
+
+        const stepData = response.data?.data?.step_data?.['family-space'];
+        const stepStatus = response.data?.data?.steps?.['family-space'];
+
+        // If step has data, we're in EDIT mode - pre-populate
+        if (stepData) {
+          setIsEditMode(true);
+          const savedName = stepData.name || stepData.family_name;
+          if (savedName && !familyName) {
+            setFamilyName(savedName);
+            setSetupMode('manage'); // Already have a family, show manage mode
+          }
+        } else if (stepStatus?.status === 'completed') {
+          setIsEditMode(true);
+          setSetupMode('manage');
+        }
+      } catch (error) {
+        console.log('Could not fetch onboarding status for family-space step:', error);
+      }
+    };
+
+    // Only fetch if not coming from settings and no prefill
+    if (!isFromSettings && !prefillFamily) {
+      fetchExistingData();
+    }
+  }, [isFromSettings, prefillFamily]);
 
   // Entrance animations
   const headerOpacity = useRef(new Animated.Value(0)).current;

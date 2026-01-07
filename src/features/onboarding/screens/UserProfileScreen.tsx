@@ -102,27 +102,54 @@ export const UserProfileScreen: React.FC<Props> = ({ navigation, route }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleContinue = () => {
-    if (validate()) {
-      // Save profile data (we'll implement this with SQLite later)
-      const profileData = {
-        firstName,
-        lastName,
-        gender: selectedGender,
-        dob: dob?.toISOString(),
-        profileImage,
-      };
+  const [isLoading, setIsLoading] = useState(false);
 
-      if (isFromSettings) {
-        // If from settings, just go back
-        navigation.goBack();
-      } else {
-        // Continue onboarding - navigate to Gender Selection
-        navigation.navigate('GenderSelection', {
-          isFromSettings: false,
-          prefillFamily,
-        });
-      }
+  const handleContinue = async () => {
+    if (!validate()) return;
+
+    setIsLoading(true);
+    try {
+      // Save profile data via FKonboarding API
+      await api.post('/api/FKonboarding/complete-step', {
+        stepId: 'personal-profile',
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          gender: selectedGender,
+          date_of_birth: dob?.toISOString(),
+          profile_image: profileImage,
+        },
+      });
+
+      // Show success message
+      Alert.alert(
+        'Success',
+        'Profile saved successfully!',
+        [
+          {
+            text: 'Continue',
+            onPress: () => {
+              if (isFromSettings) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('GenderSelection', {
+                  isFromSettings: false,
+                  prefillFamily,
+                });
+              }
+            },
+          },
+        ]
+      );
+    } catch (err: any) {
+      console.error('Error saving profile:', err);
+      Alert.alert(
+        'Error',
+        err.message || 'Failed to save profile. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
