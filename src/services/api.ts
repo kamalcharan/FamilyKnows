@@ -55,6 +55,11 @@ class ApiService {
   private cachedAuthToken: string | null = null;
   private cachedTenantId: string | null = null;
 
+  // Track consecutive 401s on fresh tokens to detect truly invalid tokens
+  // Reset on successful request or auth clear
+  private consecutive401Count: number = 0;
+  private static readonly MAX_CONSECUTIVE_401S = 2;
+
   constructor() {
     this.baseUrl = API_URL;
     this.defaultHeaders = {
@@ -67,6 +72,7 @@ class ApiService {
   setAuthToken(token: string): void {
     console.log('api.setAuthToken: Setting token in memory');
     this.cachedAuthToken = token;
+    this.consecutive401Count = 0; // Reset 401 counter on new token
   }
 
   // Set tenant ID immediately (called from AuthContext after login/register)
@@ -182,9 +188,10 @@ class ApiService {
 
       clearTimeout(timeoutId);
 
-      // Update activity on successful requests
+      // Update activity on successful requests and reset 401 counter
       if (response.ok) {
         await this.updateLastActivity();
+        this.consecutive401Count = 0; // Reset on successful request
       }
 
       // Parse response body FIRST before handling status codes
@@ -219,8 +226,18 @@ class ApiService {
         const tokenAge = lastActivity ? Date.now() - parseInt(lastActivity, 10) : Infinity;
 
         if (tokenAge < 30000) {
-          // Token is fresh - don't clear auth, just throw error
-          console.log('Token is fresh (age: ' + tokenAge + 'ms), not clearing auth');
+          // Token is fresh - track consecutive 401s to detect truly invalid tokens
+          this.consecutive401Count++;
+          console.log(`Token is fresh (age: ${tokenAge}ms), consecutive 401 count: ${this.consecutive401Count}`);
+
+          // If we've had multiple consecutive 401s with a fresh token, the token is truly invalid
+          if (this.consecutive401Count >= ApiService.MAX_CONSECUTIVE_401S) {
+            console.log(`Max consecutive 401s (${ApiService.MAX_CONSECUTIVE_401S}) reached - token is invalid, clearing auth`);
+            await this.clearAuth();
+            throw new Error('Session expired. Please login again.');
+          }
+
+          // First 401 on fresh token - might be a race condition, throw retriable error
           throw new Error('Service temporarily unavailable. Please try again.');
         }
 
@@ -313,6 +330,7 @@ class ApiService {
     // Clear in-memory cache first (immediate)
     this.cachedAuthToken = null;
     this.cachedTenantId = null;
+    this.consecutive401Count = 0; // Reset 401 counter
 
     // Then clear AsyncStorage
     try {

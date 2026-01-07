@@ -51,6 +51,10 @@ export const LoginScreen: React.FC = () => {
   // Refs for input focus
   const passwordInputRef = useRef<TextInput>(null);
 
+  // Retry counter for onboarding check to prevent infinite loops
+  const onboardingCheckRetryCount = useRef(0);
+  const MAX_ONBOARDING_CHECK_RETRIES = 2;
+
   // Entrance animations
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.8)).current;
@@ -118,6 +122,9 @@ export const LoginScreen: React.FC = () => {
             };
           }>('/api/FKonboarding/status');
 
+          // Reset retry counter on successful response
+          onboardingCheckRetryCount.current = 0;
+
           const result = response.data;
           console.log('Onboarding status:', JSON.stringify(result, null, 2));
 
@@ -172,9 +179,30 @@ export const LoginScreen: React.FC = () => {
               });
             }
           }
-        } catch (error) {
-          console.log('Error checking onboarding status, defaulting to onboarding:', error);
-          // Default to onboarding flow on error
+        } catch (error: any) {
+          console.log('Error checking onboarding status:', error);
+          onboardingCheckRetryCount.current++;
+
+          // Check if this is a session expired error (auth was cleared)
+          if (error.message?.includes('Session expired')) {
+            console.log('Session expired - will return to login');
+            onboardingCheckRetryCount.current = 0;
+            // Auth context will handle setting isAuthenticated to false
+            return;
+          }
+
+          // If we've exceeded max retries, show error and don't retry
+          if (onboardingCheckRetryCount.current >= MAX_ONBOARDING_CHECK_RETRIES) {
+            console.log(`Max onboarding check retries (${MAX_ONBOARDING_CHECK_RETRIES}) exceeded - showing error`);
+            showToast('error', 'Connection Error', 'Unable to verify account status. Please try logging in again.');
+            onboardingCheckRetryCount.current = 0;
+            // Clear auth to break the loop and let user try fresh login
+            await api.clearAuth();
+            return;
+          }
+
+          // First retry - default to onboarding flow
+          console.log(`Onboarding check failed (attempt ${onboardingCheckRetryCount.current}), defaulting to onboarding`);
           navigation.replace('PhoneAuth' as any, { isFromSettings: false });
         }
       }
