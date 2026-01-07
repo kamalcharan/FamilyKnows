@@ -1,5 +1,6 @@
 // src/services/api.ts
 // API Service with x-product header for FamilyKnows
+// UPDATED: Added in-memory token caching to fix race condition with AsyncStorage
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -50,6 +51,11 @@ class ApiService {
   private baseUrl: string;
   private defaultHeaders: Record<string, string>;
 
+  // IN-MEMORY CACHE - Fixes race condition with AsyncStorage
+  // These are set immediately after login/register, before AsyncStorage completes
+  private cachedAuthToken: string | null = null;
+  private cachedTenantId: string | null = null;
+
   constructor() {
     this.baseUrl = API_URL;
     this.defaultHeaders = {
@@ -58,31 +64,70 @@ class ApiService {
     };
   }
 
+  // NEW: Set auth token immediately (called from AuthContext after login/register)
+  setAuthToken(token: string): void {
+    console.log('api.setAuthToken: Setting token in memory');
+    this.cachedAuthToken = token;
+  }
+
+  // NEW: Set tenant ID immediately (called from AuthContext after login/register)
+  setTenantId(tenantId: string): void {
+    console.log('api.setTenantId: Setting tenant ID in memory:', tenantId);
+    this.cachedTenantId = tenantId;
+  }
+
+  // NEW: Get current auth state (for debugging)
+  getAuthState(): { hasToken: boolean; hasTenant: boolean } {
+    return {
+      hasToken: !!this.cachedAuthToken,
+      hasTenant: !!this.cachedTenantId,
+    };
+  }
+
   // Check if endpoint is an auth endpoint (should not trigger session refresh)
   private isAuthEndpoint(endpoint: string): boolean {
     return AUTH_ENDPOINTS.some(authEndpoint => endpoint.startsWith(authEndpoint));
   }
 
-  // Get auth headers from storage
+  // Get auth headers - NOW CHECKS IN-MEMORY CACHE FIRST
   private async getAuthHeaders(): Promise<Record<string, string>> {
     const headers: Record<string, string> = { ...this.defaultHeaders };
 
     try {
-      const authToken = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-      const tenantId = await AsyncStorage.getItem(STORAGE_KEYS.TENANT_ID);
+      // PRIORITY 1: Use in-memory cached token (instant, no async delay)
+      let authToken = this.cachedAuthToken;
+      let tenantId = this.cachedTenantId;
+
+      // PRIORITY 2: Fall back to AsyncStorage if in-memory is empty
+      if (!authToken) {
+        authToken = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+        if (authToken) {
+          this.cachedAuthToken = authToken; // Cache it for next time
+        }
+      }
+
+      if (!tenantId) {
+        tenantId = await AsyncStorage.getItem(STORAGE_KEYS.TENANT_ID);
+        if (tenantId) {
+          this.cachedTenantId = tenantId; // Cache it for next time
+        }
+      }
 
       console.log('=== AUTH HEADERS DEBUG ===');
       console.log('Auth token present:', !!authToken, authToken ? `(${authToken.substring(0, 20)}...)` : '');
       console.log('Tenant ID:', tenantId);
+      console.log('Source: ', this.cachedAuthToken ? 'in-memory cache' : 'AsyncStorage');
 
       if (authToken) {
         headers['Authorization'] = `Bearer ${authToken}`;
       } else {
-        console.warn('WARNING: No auth token found in storage!');
+        console.warn('WARNING: No auth token found!');
       }
 
       if (tenantId) {
         headers['x-tenant-id'] = tenantId;
+      } else {
+        console.warn('WARNING: No tenant ID found!');
       }
 
       const isLive = await AsyncStorage.getItem(STORAGE_KEYS.IS_LIVE);
@@ -177,7 +222,9 @@ class ApiService {
         if (tokenAge < 30000) {
           // Token is fresh - don't clear auth, just throw error
           console.log('Token is fresh (age: ' + tokenAge + 'ms), not clearing auth');
-          throw new Error('Service temporarily unavailable. Please try again.');
+          // Return the actual error from the server if available
+          const errorMessage = (data as any)?.error || (data as any)?.message || 'Service temporarily unavailable. Please try again.';
+          throw new Error(errorMessage);
         }
 
         // Token expired, try to refresh
@@ -246,7 +293,11 @@ class ApiService {
       }
 
       const data = await response.json();
+
+      // Update both AsyncStorage AND in-memory cache
       await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, data.access_token);
+      this.cachedAuthToken = data.access_token; // Update cache too!
+
       if (data.refresh_token) {
         await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refresh_token);
       }
@@ -258,8 +309,15 @@ class ApiService {
     }
   }
 
-  // Clear auth data
+  // Clear auth data - NOW ALSO CLEARS IN-MEMORY CACHE
   async clearAuth(): Promise<void> {
+    console.log('api.clearAuth: Clearing all auth data');
+
+    // Clear in-memory cache first (immediate)
+    this.cachedAuthToken = null;
+    this.cachedTenantId = null;
+
+    // Then clear AsyncStorage
     try {
       await AsyncStorage.multiRemove([
         STORAGE_KEYS.AUTH_TOKEN,

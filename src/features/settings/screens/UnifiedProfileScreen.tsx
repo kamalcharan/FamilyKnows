@@ -22,7 +22,9 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Toast from 'react-native-toast-message';
+import { toast } from '../../../components/Toast';
+import { dialog } from '../../../components/ConfirmDialog';
+import { useLanguage } from '../../../context/LanguageContext';
 // Single source of truth for languages
 import { supportedLanguages } from '../../../constants/languages';
 
@@ -206,19 +208,11 @@ export const UnifiedProfileScreen: React.FC = () => {
         });
       }
 
-      Toast.show({
-        type: 'success',
-        text1: 'Profile Updated',
-        text2: 'Your personal info has been saved.',
-      });
+      toast.success('Profile Updated', 'Your personal info has been saved.');
       setEditSection('none');
     } catch (error) {
       console.error('Error saving personal info:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Save Failed',
-        text2: 'Could not save changes. Please try again.',
-      });
+      toast.error('Save Failed', 'Could not save changes. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -287,7 +281,7 @@ export const UnifiedProfileScreen: React.FC = () => {
       <MaterialCommunityIcons
         name={icon as any}
         size={22}
-        color={theme.colors.utility.secondaryText}
+        color={theme.colors.brand.primary}
       />
       <View style={styles.rowContent}>
         <Text style={[styles.rowLabel, { color: theme.colors.utility.secondaryText }]}>
@@ -320,7 +314,7 @@ export const UnifiedProfileScreen: React.FC = () => {
       <MaterialCommunityIcons
         name={icon as any}
         size={22}
-        color={theme.colors.utility.secondaryText}
+        color={theme.colors.brand.primary}
       />
       <View style={styles.rowContent}>
         <Text style={[styles.rowLabel, { color: theme.colors.utility.secondaryText }]}>
@@ -360,7 +354,7 @@ export const UnifiedProfileScreen: React.FC = () => {
       <MaterialCommunityIcons
         name={icon as any}
         size={22}
-        color={theme.colors.utility.secondaryText}
+        color={theme.colors.brand.primary}
       />
       <View style={styles.rowContent}>
         <Text style={[styles.rowLabel, { color: theme.colors.utility.secondaryText }]}>
@@ -386,7 +380,7 @@ export const UnifiedProfileScreen: React.FC = () => {
       <MaterialCommunityIcons
         name="gender-male-female"
         size={22}
-        color={theme.colors.utility.secondaryText}
+        color={theme.colors.brand.primary}
       />
       <View style={styles.rowContent}>
         <Text style={[styles.rowLabel, { color: theme.colors.utility.secondaryText }]}>
@@ -445,7 +439,7 @@ export const UnifiedProfileScreen: React.FC = () => {
       <MaterialCommunityIcons
         name="calendar"
         size={22}
-        color={theme.colors.utility.secondaryText}
+        color={theme.colors.brand.primary}
       />
       <View style={styles.rowContent}>
         <Text style={[styles.rowLabel, { color: theme.colors.utility.secondaryText }]}>

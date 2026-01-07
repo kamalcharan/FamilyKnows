@@ -8,7 +8,6 @@ import {
   Text,
   ScrollView,
   TouchableWithoutFeedback,
-  Alert,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -16,6 +15,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { useAuth } from '../../context/AuthContext';
+import { dialog } from '../ConfirmDialog';
+import { toast } from '../Toast';
 
 interface MenuDrawerProps {
   visible: boolean;
@@ -86,22 +87,26 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
     },
   ];
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
+  const handleLogout = () => {
+    dialog.show({
+      type: 'warning',
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out? You will need to log in again to access your account.',
+      icon: 'logout',
+      buttons: [
         {
           text: 'Cancel',
+          onPress: () => {},
           style: 'cancel',
         },
         {
           text: 'Sign Out',
-          style: 'destructive',
           onPress: async () => {
             onClose();
             try {
               await logout();
+              // Show success toast
+              toast.success('Signed Out', 'You have been successfully signed out.');
               // Navigate to login after logout
               navigation.reset({
                 index: 0,
@@ -109,6 +114,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
               });
             } catch (error) {
               console.error('Logout error:', error);
+              toast.info('Session Ended', 'Your session has ended.');
               // Still navigate to login even on error
               navigation.reset({
                 index: 0,
@@ -116,9 +122,10 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
               });
             }
           },
+          style: 'destructive',
         },
-      ]
-    );
+      ],
+    });
   };
 
   const handleMenuItemPress = (item: any) => {
