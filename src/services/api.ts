@@ -407,6 +407,26 @@ export const API_ENDPOINTS = {
     SEND: '/api/otp/send',
     VERIFY: '/api/otp/verify',
   },
+    MASTERDATA: {
+    CATEGORIES: '/api/masterdata/categories',
+    CATEGORY_DETAILS: (categoryId: string) => `/api/masterdata/categories/${categoryId}/details`,
+  },
+
+  INVITATIONS: {
+    CREATE: '/api/users/invitations',
+    LIST: '/api/users/invitations',
+    GET: (id: string) => `/api/users/invitations/${id}`,
+    CANCEL: (id: string) => `/api/users/invitations/${id}`,
+    RESEND: (id: string) => `/api/users/invitations/${id}/resend`,
+  },
+  CATEGORIES: {
+    // Get category details (relationships) - uses existing categories endpoint
+    GET_DETAILS: (category: string) => `/api/categories/${category}/details`,
+  },
+  WORKSPACE: {
+    MEMBERS: '/api/workspace/members',
+    GET_MEMBER: (id: string) => `/api/workspace/members/${id}`,
+  },
 };
 
 export default api;
