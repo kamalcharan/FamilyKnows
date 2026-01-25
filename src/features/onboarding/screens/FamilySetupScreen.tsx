@@ -8,7 +8,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Share,
-  Alert,
   Modal,
   Animated,
   Easing,
@@ -18,20 +17,22 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  FlatList,
 } from 'react-native';
-import { Text, Button, Input } from '@rneui/themed';
+import { Text, Button } from '@rneui/themed';
 import { useTheme } from '../../../theme/ThemeContext';
 import { useAuth } from '../../../context/AuthContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { OnboardingStackParamList } from '../../../navigation/types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from '../../../components/Toast';
 import { useInvitations, CreateInvitationData, Invitation } from '../../../hooks/useInvitations';
 import { useRelationships, Relationship } from '../../../hooks/useRelationships';
+import { countryCodes, CountryCode } from '../../../constants/countryCodes';
+import CountryCodePicker from '../components/CountryCodePicker';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -45,7 +46,7 @@ interface Props {
 
 type InviteMethod = 'whatsapp' | 'email' | 'sms';
 
-// Bubble positions for constellation layout
+// Bubble positions for constellation layout (6 positions + 1 for "Add More")
 const BUBBLE_POSITIONS = [
   { top: '18%', left: '12%', delay: 0 },
   { top: '15%', right: '8%', delay: 200 },
@@ -54,6 +55,12 @@ const BUBBLE_POSITIONS = [
   { bottom: '22%', left: '20%', delay: 500 },
   { bottom: '25%', right: '18%', delay: 100 },
 ];
+
+// Position for "Add More" button
+const ADD_MORE_POSITION = { bottom: '8%', left: '50%', marginLeft: -42.5, delay: 600 };
+
+// Number of bubbles to show in constellation (remaining shown in modal)
+const VISIBLE_BUBBLES = 6;
 
 export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme, isDarkMode } = useTheme();
@@ -67,24 +74,31 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
     invitations,
     isLoading: invitationsLoading,
     isCreating,
+    error: invitationsError,
     fetchInvitations,
     createInvitation,
     resendInvitation,
-    cancelInvitation,
+    clearError,
   } = useInvitations();
 
   // State
   const [selectedRelationship, setSelectedRelationship] = useState<Relationship | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showAllRelationshipsModal, setShowAllRelationshipsModal] = useState(false);
   const [inviteMethod, setInviteMethod] = useState<InviteMethod>('whatsapp');
   const [inviteContact, setInviteContact] = useState('');
   const [customMessage, setCustomMessage] = useState('');
   const [showManageMode, setShowManageMode] = useState(isFromSettings || false);
 
+  // Country code picker state
+  const [selectedCountry, setSelectedCountry] = useState<CountryCode>(countryCodes[0]); // India default
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+
   // Animations
   const orbPulse = useRef(new Animated.Value(1)).current;
   const fadeIn = useRef(new Animated.Value(0)).current;
   const slideUp = useRef(new Animated.Value(50)).current;
+  const addMoreScale = useRef(new Animated.Value(0)).current;
   const bubbleAnimations = useRef(
     BUBBLE_POSITIONS.map(() => ({
       float: new Animated.Value(0),
@@ -100,10 +114,22 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
   const glassBackground = isDarkMode ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)';
   const glassBorder = isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)';
 
+  // Split relationships: first 6 for bubbles, rest for "Add More" modal
+  const visibleRelationships = relationships.slice(0, VISIBLE_BUBBLES);
+  const additionalRelationships = relationships.slice(VISIBLE_BUBBLES);
+  const hasMoreRelationships = relationships.length > VISIBLE_BUBBLES;
+
   // Fetch invitations on mount
   useEffect(() => {
     fetchInvitations();
   }, []);
+
+  // Pre-fill message when relationship is selected
+  useEffect(() => {
+    if (selectedRelationship) {
+      setCustomMessage(selectedRelationship.defaultMessage);
+    }
+  }, [selectedRelationship]);
 
   // Entrance animations
   useEffect(() => {
@@ -175,6 +201,16 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
       floatAnimation.start();
     });
 
+    // "Add More" button animation
+    setTimeout(() => {
+      Animated.spring(addMoreScale, {
+        toValue: 1,
+        friction: 6,
+        tension: 40,
+        useNativeDriver: true,
+      }).start();
+    }, ADD_MORE_POSITION.delay);
+
     return () => {
       pulseAnimation.stop();
     };
@@ -183,13 +219,25 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
   // Handle relationship bubble tap
   const handleRelationshipTap = (relationship: Relationship) => {
     setSelectedRelationship(relationship);
+    setInviteContact('');
     setShowInviteModal(true);
+    // Close the all relationships modal if it's open
+    if (showAllRelationshipsModal) {
+      setShowAllRelationshipsModal(false);
+    }
   };
 
   // Send invitation
   const handleSendInvitation = async () => {
-    if (!inviteContact.trim()) {
-      toast.error('Required', 'Please enter email or phone number');
+    const isEmail = inviteMethod === 'email';
+
+    if (isEmail && !inviteContact.trim()) {
+      toast.error('Required', 'Please enter an email address');
+      return;
+    }
+
+    if (!isEmail && !inviteContact.trim()) {
+      toast.error('Required', 'Please enter a phone number');
       return;
     }
 
@@ -199,24 +247,19 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
     }
 
     try {
-      const isEmail = inviteContact.includes('@');
       const invitationData: CreateInvitationData = {
         invitation_method: inviteMethod,
         role_id: selectedRelationship.id,
-        custom_message: customMessage || `Join our family on FamilyKnows!`,
+        custom_message: customMessage || selectedRelationship.defaultMessage,
       };
 
       if (isEmail) {
         invitationData.email = inviteContact.trim();
       } else {
-        // Extract phone code if present (e.g., +91)
-        const phoneMatch = inviteContact.match(/^\+?(\d{1,3})?(.*)$/);
-        if (phoneMatch) {
-          invitationData.phone_code = phoneMatch[1] || '91';
-          invitationData.mobile_number = phoneMatch[2].replace(/\D/g, '');
-        } else {
-          invitationData.mobile_number = inviteContact.replace(/\D/g, '');
-        }
+        // Use selected country's dial code
+        invitationData.phone_code = selectedCountry.dialCode.replace('+', '');
+        invitationData.country_code = selectedCountry.code;
+        invitationData.mobile_number = inviteContact.replace(/\D/g, '');
       }
 
       const invitation = await createInvitation(invitationData);
@@ -224,21 +267,16 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
       toast.success('Invitation Sent!', `Invitation sent to your ${selectedRelationship.displayName}`);
 
       // Open WhatsApp if that was the method
-      if (inviteMethod === 'whatsapp' && invitation.invitation_link) {
+      if (inviteMethod === 'whatsapp') {
+        const fullPhone = `${selectedCountry.dialCode.replace('+', '')}${inviteContact.replace(/\D/g, '')}`;
         const message = encodeURIComponent(
-          `${user?.first_name || 'Someone'} has invited you to join ${workspaceName} on FamilyKnows!\n\n` +
-            `${customMessage || "Let's stay connected as a family."}\n\n` +
-            `Click here to join: ${invitation.invitation_link}`
+          `${customMessage || selectedRelationship.defaultMessage}\n\n` +
+            (invitation.invitation_link ? `Click here to join: ${invitation.invitation_link}` : '')
         );
-        const phone = invitationData.mobile_number
-          ? `${invitationData.phone_code || ''}${invitationData.mobile_number}`
-          : '';
-        const whatsappUrl = phone
-          ? `whatsapp://send?phone=${phone}&text=${message}`
-          : `whatsapp://send?text=${message}`;
+        const whatsappUrl = `whatsapp://send?phone=${fullPhone}&text=${message}`;
 
         Linking.openURL(whatsappUrl).catch(() => {
-          toast.info('WhatsApp Not Found', 'Please share the invitation link manually');
+          toast.info('WhatsApp', 'Please share the invitation link manually');
         });
       }
 
@@ -258,7 +296,8 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
     if (success) {
       toast.success('Nudged!', 'Reminder sent successfully');
     } else {
-      toast.error('Failed', 'Could not send reminder');
+      toast.error('Failed', invitationsError || 'Could not send reminder');
+      clearError();
     }
   };
 
@@ -366,6 +405,92 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
       </Animated.View>
     );
   };
+
+  // Render "Add More" button
+  const renderAddMoreButton = () => {
+    if (!hasMoreRelationships && relationships.length <= VISIBLE_BUBBLES) return null;
+
+    return (
+      <Animated.View
+        style={[
+          styles.addMoreBubble,
+          {
+            transform: [{ scale: addMoreScale }],
+          },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={() => setShowAllRelationshipsModal(true)}
+          activeOpacity={0.8}
+          style={[
+            styles.addMoreInner,
+            {
+              backgroundColor: glassBackground,
+              borderColor: colors.brand.primary,
+              borderStyle: 'dashed',
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.addMoreIcon,
+              { backgroundColor: `${colors.brand.primary}20` },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="plus"
+              size={28}
+              color={colors.brand.primary}
+            />
+          </View>
+          <Text style={[styles.addMoreLabel, { color: colors.brand.primary }]}>
+            +{relationships.length - VISIBLE_BUBBLES} More
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  // Render relationship item in modal list
+  const renderRelationshipItem = ({ item }: { item: Relationship }) => (
+    <TouchableOpacity
+      style={[
+        styles.relationshipListItem,
+        {
+          backgroundColor: glassBackground,
+          borderColor: glassBorder,
+        },
+      ]}
+      onPress={() => handleRelationshipTap(item)}
+      activeOpacity={0.7}
+    >
+      <View
+        style={[
+          styles.relationshipListIcon,
+          { backgroundColor: `${colors.brand.primary}20` },
+        ]}
+      >
+        <MaterialCommunityIcons
+          name={(item.icon as any) || 'account'}
+          size={24}
+          color={colors.brand.primary}
+        />
+      </View>
+      <View style={styles.relationshipListInfo}>
+        <Text style={[styles.relationshipListName, { color: colors.utility.primaryText }]}>
+          {item.displayName}
+        </Text>
+        <Text style={[styles.relationshipListDesc, { color: colors.utility.secondaryText }]}>
+          {item.name}
+        </Text>
+      </View>
+      <MaterialCommunityIcons
+        name="chevron-right"
+        size={24}
+        color={colors.utility.secondaryText}
+      />
+    </TouchableOpacity>
+  );
 
   // Render Management Mode (Screen 1)
   const renderManagementMode = () => (
@@ -580,7 +705,10 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
         {relationshipsLoading ? (
           <ActivityIndicator size="large" color={colors.brand.primary} />
         ) : (
-          relationships.slice(0, 6).map((rel, index) => renderBubble(rel, index))
+          <>
+            {visibleRelationships.map((rel, index) => renderBubble(rel, index))}
+            {renderAddMoreButton()}
+          </>
         )}
       </View>
 
@@ -606,6 +734,59 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* All Relationships Modal */}
+      <Modal
+        visible={showAllRelationshipsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAllRelationshipsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowAllRelationshipsModal(false)}
+          />
+          <View
+            style={[
+              styles.allRelationshipsModalContent,
+              {
+                backgroundColor: isDarkMode ? '#1a1a1f' : '#fff',
+                paddingBottom: insets.bottom + 20,
+              },
+            ]}
+          >
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.utility.primaryText }]}>
+                All Relationships
+              </Text>
+              <TouchableOpacity onPress={() => setShowAllRelationshipsModal(false)}>
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color={colors.utility.secondaryText}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[styles.allRelationshipsSubtitle, { color: colors.utility.secondaryText }]}>
+              Select a relationship to send an invitation
+            </Text>
+
+            {/* Relationships List */}
+            <FlatList
+              data={relationships}
+              renderItem={renderRelationshipItem}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.relationshipsList}
+              showsVerticalScrollIndicator={false}
+              ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            />
+          </View>
+        </View>
+      </Modal>
 
       {/* Invite Modal */}
       <Modal
@@ -682,28 +863,73 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
               <Text style={[styles.inputLabel, { color: colors.utility.secondaryText }]}>
                 {inviteMethod === 'email' ? 'Email Address' : 'Phone Number'}
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: glassBackground,
-                    borderColor: glassBorder,
-                    color: colors.utility.primaryText,
-                  },
-                ]}
-                placeholder={inviteMethod === 'email' ? 'name@example.com' : '+91 98765 43210'}
-                placeholderTextColor={colors.utility.secondaryText}
-                value={inviteContact}
-                onChangeText={setInviteContact}
-                keyboardType={inviteMethod === 'email' ? 'email-address' : 'phone-pad'}
-                autoCapitalize="none"
-              />
+
+              {inviteMethod === 'email' ? (
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: glassBackground,
+                      borderColor: glassBorder,
+                      color: colors.utility.primaryText,
+                    },
+                  ]}
+                  placeholder="name@example.com"
+                  placeholderTextColor={colors.utility.secondaryText}
+                  value={inviteContact}
+                  onChangeText={setInviteContact}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              ) : (
+                <View style={styles.phoneInputRow}>
+                  {/* Country Code Picker */}
+                  <TouchableOpacity
+                    style={[
+                      styles.countryCodeButton,
+                      {
+                        backgroundColor: glassBackground,
+                        borderColor: glassBorder,
+                      },
+                    ]}
+                    onPress={() => setShowCountryPicker(true)}
+                  >
+                    <Text style={styles.countryFlag}>{selectedCountry.flag}</Text>
+                    <Text style={[styles.countryDialCode, { color: colors.utility.primaryText }]}>
+                      {selectedCountry.dialCode}
+                    </Text>
+                    <MaterialCommunityIcons
+                      name="chevron-down"
+                      size={16}
+                      color={colors.utility.secondaryText}
+                    />
+                  </TouchableOpacity>
+
+                  {/* Phone Number Input */}
+                  <TextInput
+                    style={[
+                      styles.input,
+                      styles.phoneInput,
+                      {
+                        backgroundColor: glassBackground,
+                        borderColor: glassBorder,
+                        color: colors.utility.primaryText,
+                      },
+                    ]}
+                    placeholder="98765 43210"
+                    placeholderTextColor={colors.utility.secondaryText}
+                    value={inviteContact}
+                    onChangeText={setInviteContact}
+                    keyboardType="phone-pad"
+                  />
+                </View>
+              )}
             </View>
 
             {/* Custom Message */}
             <View style={styles.inputContainer}>
               <Text style={[styles.inputLabel, { color: colors.utility.secondaryText }]}>
-                Personal Message (Optional)
+                Personal Message
               </Text>
               <TextInput
                 style={[
@@ -757,6 +983,17 @@ export const FamilySetupScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Country Code Picker Modal */}
+      <CountryCodePicker
+        visible={showCountryPicker}
+        onClose={() => setShowCountryPicker(false)}
+        onSelect={(country) => {
+          setSelectedCountry(country);
+          setShowCountryPicker(false);
+        }}
+        selectedCode={selectedCountry.code}
+      />
     </View>
   );
 
@@ -866,6 +1103,36 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   bubbleLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  // Add More Button
+  addMoreBubble: {
+    position: 'absolute',
+    bottom: '8%',
+    left: '50%',
+    marginLeft: -42.5,
+  },
+  addMoreInner: {
+    width: 85,
+    height: 85,
+    borderRadius: 42.5,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addMoreIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  addMoreLabel: {
     fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -1091,6 +1358,47 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
+  // All Relationships Modal
+  allRelationshipsModalContent: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    maxHeight: SCREEN_HEIGHT * 0.7,
+  },
+  allRelationshipsSubtitle: {
+    fontSize: 14,
+    marginBottom: 20,
+  },
+  relationshipsList: {
+    paddingBottom: 20,
+  },
+  relationshipListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  relationshipListIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  relationshipListInfo: {
+    flex: 1,
+  },
+  relationshipListName: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  relationshipListDesc: {
+    fontSize: 13,
+  },
+
   // Method Tabs
   methodTabs: {
     flexDirection: 'row',
@@ -1129,8 +1437,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   textArea: {
-    height: 80,
+    height: 100,
     textAlignVertical: 'top',
+    paddingTop: 14,
+  },
+
+  // Phone Input
+  phoneInputRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  countryCodeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  countryFlag: {
+    fontSize: 20,
+  },
+  countryDialCode: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  phoneInput: {
+    flex: 1,
   },
 
   // Send Button

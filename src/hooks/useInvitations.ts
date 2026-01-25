@@ -3,6 +3,7 @@
 
 import { useState, useCallback } from 'react';
 import { api, API_ENDPOINTS } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export interface Invitation {
   id: string;
@@ -64,43 +65,81 @@ interface UseInvitationsReturn {
   createInvitation: (data: CreateInvitationData) => Promise<Invitation>;
   resendInvitation: (invitationId: string) => Promise<boolean>;
   cancelInvitation: (invitationId: string) => Promise<boolean>;
+  clearError: () => void;
 }
 
 export const useInvitations = (): UseInvitationsReturn => {
+  const { currentTenant, isAuthenticated } = useAuth();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [pagination, setPagination] = useState<InvitationsResponse['pagination'] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Clear error
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
   // Fetch invitations list
   const fetchInvitations = useCallback(async (page: number = 1, status: string = 'all') => {
+    // Don't fetch if not authenticated or no tenant
+    if (!isAuthenticated || !currentTenant?.id) {
+      console.log('Skipping invitations fetch - no auth or tenant');
+      setInvitations([]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
 
+      // CRITICAL: Pass tenant ID explicitly to avoid cache sync issues
+      const headers = { 'x-tenant-id': currentTenant.id };
+      console.log('useInvitations: Fetching with tenant ID:', currentTenant.id);
+
       const response = await api.get<InvitationsResponse>(
-        `${API_ENDPOINTS.INVITATIONS.LIST}?page=${page}&status=${status}&limit=20`
+        `${API_ENDPOINTS.INVITATIONS.LIST}?page=${page}&status=${status}&limit=20`,
+        headers
       );
 
-      setInvitations(response.data.data);
-      setPagination(response.data.pagination);
+      // Handle different response formats
+      if (response.data && Array.isArray(response.data.data)) {
+        setInvitations(response.data.data);
+        setPagination(response.data.pagination);
+      } else if (Array.isArray(response.data)) {
+        // Direct array response
+        setInvitations(response.data as unknown as Invitation[]);
+        setPagination(null);
+      } else {
+        setInvitations([]);
+        setPagination(null);
+      }
     } catch (err: any) {
       console.error('Error fetching invitations:', err);
-      setError(err.message || 'Failed to fetch invitations');
+      // Don't set error for fetch failures - just show empty list
+      // This prevents error toasts on initial load
       setInvitations([]);
+      setPagination(null);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated, currentTenant?.id]);
 
   // Create new invitation
   const createInvitation = useCallback(async (data: CreateInvitationData): Promise<Invitation> => {
+    if (!isAuthenticated || !currentTenant?.id) {
+      throw new Error('Please log in to send invitations');
+    }
+
     try {
       setIsCreating(true);
       setError(null);
 
-      const response = await api.post<Invitation>(API_ENDPOINTS.INVITATIONS.CREATE, data);
+      // Pass tenant ID explicitly
+      const headers = { 'x-tenant-id': currentTenant.id };
+      const response = await api.post<Invitation>(API_ENDPOINTS.INVITATIONS.CREATE, data, headers);
 
       // Add new invitation to list
       setInvitations((prev) => [response.data, ...prev]);
@@ -108,20 +147,27 @@ export const useInvitations = (): UseInvitationsReturn => {
       return response.data;
     } catch (err: any) {
       console.error('Error creating invitation:', err);
-      const errorMessage = err.message || 'Failed to send invitation';
+      const errorMessage = err.message || 'Failed to send invitation. Please try again.';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
       setIsCreating(false);
     }
-  }, []);
+  }, [isAuthenticated, currentTenant?.id]);
 
   // Resend invitation
   const resendInvitation = useCallback(async (invitationId: string): Promise<boolean> => {
+    if (!isAuthenticated || !currentTenant?.id) {
+      setError('Please log in to resend invitations');
+      return false;
+    }
+
     try {
       setError(null);
 
-      await api.post(API_ENDPOINTS.INVITATIONS.RESEND(invitationId));
+      // Pass tenant ID explicitly
+      const headers = { 'x-tenant-id': currentTenant.id };
+      await api.post(API_ENDPOINTS.INVITATIONS.RESEND(invitationId), {}, headers);
 
       // Update invitation in list
       setInvitations((prev) =>
@@ -140,17 +186,25 @@ export const useInvitations = (): UseInvitationsReturn => {
       return true;
     } catch (err: any) {
       console.error('Error resending invitation:', err);
-      setError(err.message || 'Failed to resend invitation');
+      const errorMessage = err.message || 'Failed to resend invitation';
+      setError(errorMessage);
       return false;
     }
-  }, []);
+  }, [isAuthenticated, currentTenant?.id]);
 
   // Cancel invitation
   const cancelInvitation = useCallback(async (invitationId: string): Promise<boolean> => {
+    if (!isAuthenticated || !currentTenant?.id) {
+      setError('Please log in to cancel invitations');
+      return false;
+    }
+
     try {
       setError(null);
 
-      await api.post(API_ENDPOINTS.INVITATIONS.CANCEL(invitationId));
+      // Pass tenant ID explicitly
+      const headers = { 'x-tenant-id': currentTenant.id };
+      await api.post(API_ENDPOINTS.INVITATIONS.CANCEL(invitationId), {}, headers);
 
       // Update invitation in list
       setInvitations((prev) =>
@@ -162,10 +216,11 @@ export const useInvitations = (): UseInvitationsReturn => {
       return true;
     } catch (err: any) {
       console.error('Error cancelling invitation:', err);
-      setError(err.message || 'Failed to cancel invitation');
+      const errorMessage = err.message || 'Failed to cancel invitation';
+      setError(errorMessage);
       return false;
     }
-  }, []);
+  }, [isAuthenticated, currentTenant?.id]);
 
   return {
     invitations,
@@ -177,6 +232,7 @@ export const useInvitations = (): UseInvitationsReturn => {
     createInvitation,
     resendInvitation,
     cancelInvitation,
+    clearError,
   };
 };
 

@@ -136,7 +136,7 @@ class ApiService {
       }
 
       const isLive = await AsyncStorage.getItem(STORAGE_KEYS.IS_LIVE);
-      headers['x-environment'] = isLive === 'true' ? 'live' : 'test';
+     headers['x-environment'] = 'live';
     } catch (error) {
       console.error('Error getting auth headers:', error);
     }
