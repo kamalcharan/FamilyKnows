@@ -13,6 +13,7 @@ export type OnboardingPrefillData = {
 export type AuthStackParamList = {
   // Auth screens
   Splash: undefined;
+  DevMenu: undefined;  // Dev menu for UI testing - access via triple-tap on Splash
   Intro: undefined;
   StoryOnboarding: undefined;
   Login: { userName?: string; familyName?: string };

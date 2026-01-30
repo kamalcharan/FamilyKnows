@@ -10,6 +10,9 @@ import { LoginScreen } from '../../features/auth/screens/LoginScreen';
 import { SignupScreen } from '../../features/auth/screens/SignupScreen';
 import { ForgotPasswordScreen } from '../../features/auth/screens/ForgotPasswordScreen';
 
+// Dev screens
+import { DevMenuScreen } from '../../features/dev/DevMenuScreen';
+
 // Onboarding screens
 import { StoryOnboardingScreen } from '../../features/onboarding/screens/StoryOnboardingScreen';
 import { MobileNumberScreen } from '../../features/onboarding/screens/MobileNumberScreen';
@@ -39,6 +42,13 @@ export const AuthStack: React.FC = () => {
     >
       {/* Auth Flow */}
       <Stack.Screen name="Splash" component={SplashScreen} />
+      <Stack.Screen
+        name="DevMenu"
+        component={DevMenuScreen}
+        options={{
+          animation: 'slide_from_bottom',
+        }}
+      />
       <Stack.Screen
         name="Intro"
         component={IntroScreens}
